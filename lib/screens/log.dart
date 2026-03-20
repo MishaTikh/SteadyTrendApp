@@ -92,6 +92,62 @@ class _LogScreenState extends State<LogScreen> {
     );
   }
 
+  void _showManualWeightEntry() {
+    final TextEditingController controller = TextEditingController(text: _currentWeight.toStringAsFixed(1));
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Enter Weight'),
+          content: TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Weight ($_selectedUnit)',
+              border: const OutlineInputBorder(),
+            ),
+            autofocus: true,
+            onSubmitted: (value) {
+              final parsed = double.tryParse(value);
+              if (parsed != null && parsed >= 0) {
+                Navigator.pop(context);
+                _scrollController.animateTo(
+                  parsed * 100,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final parsed = double.tryParse(controller.text);
+                if (parsed != null && parsed >= 0) {
+                  Navigator.pop(context);
+                  _scrollController.animateTo(
+                    parsed * 100,
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    ).then((_) => controller.dispose());
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -131,15 +187,22 @@ class _LogScreenState extends State<LogScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           SizedBox(
-                            width: 150,
-                            child: Text(
-                              _currentWeight.toStringAsFixed(1),
-                              textAlign: TextAlign.right,
-                              style: const TextStyle(
-                                fontSize: 64,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.textDark,
-                                height: 1.0,
+                            width: 180,
+                            child: GestureDetector(
+                              onTap: _showManualWeightEntry,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  _currentWeight.toStringAsFixed(1),
+                                  textAlign: TextAlign.right,
+                                  style: const TextStyle(
+                                    fontSize: 64,
+                                    fontWeight: FontWeight.w900,
+                                    color: AppColors.textDark,
+                                    height: 1.0,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

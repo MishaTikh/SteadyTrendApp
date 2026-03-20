@@ -131,14 +131,14 @@ class HistoryScreen extends StatelessWidget {
   }
 
   void _showBulkAddModal(BuildContext context, WeightProvider provider, SettingsProvider settings) {
+    DateTime currentDate = DateTime.now();
+    final TextEditingController controller = TextEditingController();
+    final FocusNode focusNode = FocusNode();
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (context) {
-        DateTime currentDate = DateTime.now();
-        final TextEditingController controller = TextEditingController();
-        final FocusNode focusNode = FocusNode();
-
         return StatefulBuilder(
           builder: (context, setState) {
             return Padding(
@@ -221,7 +221,10 @@ class HistoryScreen extends StatelessWidget {
           }
         );
       }
-    );
+    ).then((_) {
+      controller.dispose();
+      focusNode.dispose();
+    });
   }
 
   @override
