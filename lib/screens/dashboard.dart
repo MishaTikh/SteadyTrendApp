@@ -31,7 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Weight Momentum',
+                  'Weight Trend',
                   style: TextStyle(
                     fontSize: 28,
                     fontWeight: FontWeight.w900,
@@ -363,7 +363,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  'WEEKLY MOMENTUM',
+                  'WEEKLY TREND',
                   style: TextStyle(fontSize: 12, letterSpacing: 1.0, color: AppColors.textDark),
                 ),
                 Icon(Icons.trending_down, color: AppColors.primaryGreen, size: 20),
@@ -462,7 +462,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                  ),
                  const SizedBox(height: 8),
                  Text(
-                   'BASED ON YOUR 1-WEEK MOMENTUM',
+                   'BASED ON YOUR 1-WEEK TREND',
                    style: TextStyle(fontSize: 10, letterSpacing: 1.0, color: AppColors.textDark.withOpacity(0.7)),
                  ),
                ]

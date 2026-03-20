@@ -36,7 +36,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Kinetic Weight Momentum',
+      title: 'SteadyTrend',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         scaffoldBackgroundColor: AppColors.backgroundLight,
@@ -105,7 +105,7 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               const Icon(Icons.show_chart, color: AppColors.primaryGreen, size: 28),
               const SizedBox(width: 8),
-              const Text('KINETIC', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+              const Text('SteadyTrend', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
             ],
           ),
           actions: [

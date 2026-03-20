@@ -36,5 +36,5 @@ jobs:
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kinetic-app-release
+          name: steadytrend-app-release
           path: build/app/outputs/flutter-apk/app-release.apk
