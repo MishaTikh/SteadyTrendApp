@@ -27,6 +27,6 @@ void main() {
     );
 
     // Verify that the title is present
-    expect(find.text('KINETIC'), findsOneWidget);
+    expect(find.text('SteadyTrend'), findsOneWidget);
   });
 }
