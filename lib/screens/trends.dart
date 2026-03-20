@@ -1,8 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../main.dart'; // for AppColors
+import '../providers/weight_provider.dart';
 
-class TrendsScreen extends StatelessWidget {
+class TrendsScreen extends StatefulWidget {
   const TrendsScreen({super.key});
+
+  @override
+  State<TrendsScreen> createState() => _TrendsScreenState();
+}
+
+class _TrendsScreenState extends State<TrendsScreen> {
+  final TextEditingController _weightController = TextEditingController();
+
+  @override
+  void dispose() {
+    _weightController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +38,7 @@ class TrendsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Your weight is\ntrending down.',
+              'Your weight is\ntrending down.', // Will be updated dynamically below
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w900,
@@ -33,44 +48,25 @@ class TrendsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             const Text(
-              'You are making steady progress.\nBased on the last 30 days, your weight\nis consistently moving in the right\ndirection.',
+              'Keep logging data consistently to see your trends update in real-time.',
               style: TextStyle(fontSize: 16, color: AppColors.textDark, height: 1.4),
             ),
             const SizedBox(height: 24),
-            _buildAverageDeltaCard(),
-            const SizedBox(height: 24),
-            _buildChangeCard(
-              '1-Week Average\nChange',
-              'Your weight has dropped\nslightly this week.',
-              '82.1kg',
-              '82.6kg',
-              '-0.5kg',
-              '- 0.6%',
-              0.55,
-              0.6,
-            ),
-            _buildChangeCard(
-              '2-Week Average Change',
-              'You are maintaining a good downward\npace.',
-              '82.4kg',
-              '83.5kg',
-              '-1.1kg',
-              '- 1.3%',
-              0.5,
-              0.55,
-            ),
-            _buildChangeCard(
-              '1-Month Average Change',
-              'Your average is lower over the last month.',
-              '83.2kg',
-              '85.6kg',
-              '-2.4kg',
-              '- 2.8%',
-              0.45,
-              0.55,
+            Consumer<WeightProvider>(
+              builder: (context, provider, child) {
+                return Column(
+                  children: [
+                    _buildAverageDeltaCard(provider),
+                    const SizedBox(height: 24),
+                    _build1WeekChangeCard(provider),
+                    _build2WeekChangeCard(provider),
+                    _build1MonthChangeCard(provider),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 8),
-            _buildLogWeightCard(),
+            _buildLogWeightCard(context),
             const SizedBox(height: 80),
           ],
         ),
@@ -78,19 +74,30 @@ class TrendsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAverageDeltaCard() {
+  Widget _buildAverageDeltaCard(WeightProvider provider) {
+    final delta = provider.averageMonthlyDelta;
+    String deltaStr = 'Needs Data';
+    IconData icon = Icons.trending_flat;
+    Color color = AppColors.textLight;
+
+    if (delta != null) {
+      deltaStr = '${delta > 0 ? '+' : ''}${delta.toStringAsFixed(1)}kg';
+      icon = delta < 0 ? Icons.trending_down : Icons.trending_up;
+      color = delta < 0 ? AppColors.primaryGreen : Colors.red;
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: AppColors.dividerColor.withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
-        border: const Border(
-          left: BorderSide(color: AppColors.primaryGreen, width: 4),
+        border: Border(
+          left: BorderSide(color: color, width: 4),
         ),
       ),
       padding: const EdgeInsets.all(20),
       child: Row(
         children: [
-          Icon(Icons.trending_down, color: AppColors.primaryGreen, size: 28),
+          Icon(icon, color: color, size: 28),
           const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -105,12 +112,12 @@ class TrendsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(
-                '-2.4kg',
+              Text(
+                deltaStr,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primaryGreen,
+                  color: color,
                 ),
               ),
             ],
@@ -120,7 +127,70 @@ class TrendsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChangeCard(String title, String subtitle, String currentVal, String prevVal, String delta, String deltaPct, double currentProgress, double prevProgress) {
+  Widget _build1WeekChangeCard(WeightProvider provider) {
+    final current = provider.current7DayAverage;
+    final previous = provider.previous7DayAverage;
+    if (current == null || previous == null) return const SizedBox.shrink();
+
+    return _buildChangeCard(
+      '1-Week Average\nChange',
+      'Based on your last 7 days.',
+      '${current.toStringAsFixed(1)}kg',
+      '${previous.toStringAsFixed(1)}kg',
+      current,
+      previous,
+    );
+  }
+
+  Widget _build2WeekChangeCard(WeightProvider provider) {
+    final current = provider.current14DayAverage;
+    final previous = provider.previous14DayAverage;
+    if (current == null || previous == null) return const SizedBox.shrink();
+
+    return _buildChangeCard(
+      '2-Week Average Change',
+      'Based on your last 14 days.',
+      '${current.toStringAsFixed(1)}kg',
+      '${previous.toStringAsFixed(1)}kg',
+      current,
+      previous,
+    );
+  }
+
+  Widget _build1MonthChangeCard(WeightProvider provider) {
+    final current = provider.current30DayAverage;
+    final previous = provider.previous30DayAverage;
+    if (current == null || previous == null) return const SizedBox.shrink();
+
+    return _buildChangeCard(
+      '1-Month Average Change',
+      'Based on your last 30 days.',
+      '${current.toStringAsFixed(1)}kg',
+      '${previous.toStringAsFixed(1)}kg',
+      current,
+      previous,
+    );
+  }
+
+  Widget _buildChangeCard(String title, String subtitle, String currentValStr, String prevValStr, double currentVal, double prevVal) {
+    final deltaVal = currentVal - prevVal;
+    final deltaPctVal = (deltaVal / prevVal) * 100;
+
+    final signStr = deltaVal > 0 ? '+' : '';
+    final delta = '$signStr${deltaVal.toStringAsFixed(1)}kg';
+    final deltaPct = '${deltaPctVal.toStringAsFixed(1)}%';
+
+    final isDown = deltaVal < 0;
+    final color = isDown ? AppColors.primaryGreen : Colors.red;
+    final icon = isDown ? Icons.arrow_drop_down : Icons.arrow_drop_up;
+
+    // mock progress logic for visual bar
+    double maxVal = currentVal > prevVal ? currentVal : prevVal;
+    // pad max val for visual scale
+    maxVal = maxVal + 10;
+    double currentProgress = currentVal / maxVal;
+    double prevProgress = prevVal / maxVal;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -195,7 +265,7 @@ class TrendsScreen extends StatelessWidget {
                 const SizedBox(width: 16),
                 SizedBox(
                   width: 60,
-                  child: Text(currentVal, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  child: Text(currentValStr, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 ),
               ],
             ),
@@ -216,7 +286,7 @@ class TrendsScreen extends StatelessWidget {
                 const SizedBox(width: 16),
                 SizedBox(
                   width: 60,
-                  child: Text(prevVal, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  child: Text(prevValStr, textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 ),
               ],
             ),
@@ -225,21 +295,21 @@ class TrendsScreen extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.05),
+                  color: color.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.primaryGreen.withOpacity(0.1)),
+                  border: Border.all(color: color.withOpacity(0.1)),
                 ),
                 child: Column(
                   children: [
                     const Text('DELTA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0, color: AppColors.textLight)),
                     const SizedBox(height: 4),
-                    Text(delta, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                    Text(delta, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen, size: 16),
-                        Text(deltaPct, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                        Icon(icon, color: color, size: 16),
+                        Text(deltaPct, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
                       ],
                     ),
                   ],
@@ -252,7 +322,7 @@ class TrendsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogWeightCard() {
+  Widget _buildLogWeightCard(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -293,6 +363,7 @@ class TrendsScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextField(
+                    controller: _weightController,
                     decoration: InputDecoration(
                       hintText: '00.0',
                       hintStyle: TextStyle(fontSize: 24, color: Colors.white.withOpacity(0.5)),
@@ -314,7 +385,19 @@ class TrendsScreen extends StatelessWidget {
             width: double.infinity,
             height: 50,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () async {
+                final text = _weightController.text;
+                if (text.isNotEmpty) {
+                  final weight = double.tryParse(text);
+                  if (weight != null) {
+                    await Provider.of<WeightProvider>(context, listen: false).addEntry(DateTime.now(), weight);
+                    _weightController.clear();
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Weight logged!')));
+                    }
+                  }
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
                 foregroundColor: AppColors.primaryGreen,

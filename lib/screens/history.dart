@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../main.dart'; // for AppColors
+import '../providers/weight_provider.dart';
+import '../models/weight_entry.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
@@ -34,13 +37,63 @@ class HistoryScreen extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 32),
-            _buildMonthSection('SEPTEMBER 2023'),
-            _buildLogEntry('28', 'SEP', '07:14 AM', '82.4', '-0.2', true),
-            _buildLogEntry('25', 'SEP', '08:00 AM', '82.6', '+0.5', false),
-            const SizedBox(height: 24),
-            _buildMonthSection('AUGUST 2023'),
-            _buildLogEntry('30', 'AUG', '07:30 AM', '82.1', '-1.2', true),
-            const SizedBox(height: 48),
+            Consumer<WeightProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                final entries = provider.entries;
+                if (entries.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 48.0),
+                      child: Text(
+                        'NO RECORDS YET',
+                        style: TextStyle(
+                          fontSize: 12,
+                          letterSpacing: 1.5,
+                          color: AppColors.textLight,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                // Group by Month/Year
+                Map<String, List<WeightEntry>> grouped = {};
+                for (var entry in entries) {
+                  final key = '${_getFullMonth(entry.date.month)} ${entry.date.year}';
+                  if (!grouped.containsKey(key)) {
+                    grouped[key] = [];
+                  }
+                  grouped[key]!.add(entry);
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: grouped.keys.length,
+                  itemBuilder: (context, index) {
+                    final monthKey = grouped.keys.elementAt(index);
+                    final monthEntries = grouped[monthKey]!;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildMonthSection(monthKey),
+                        ...monthEntries.map((entry) {
+                           final variance = provider.getVarianceForEntry(entry);
+                           return _buildDynamicLogEntry(entry, variance, provider, context);
+                        }),
+                        const SizedBox(height: 24),
+                      ],
+                    );
+                  },
+                );
+              },
+            ),
             const Center(
               child: Text(
                 'END OF RECORDS',
@@ -57,6 +110,42 @@ class HistoryScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getFullMonth(int month) {
+    switch (month) {
+      case 1: return 'JANUARY';
+      case 2: return 'FEBRUARY';
+      case 3: return 'MARCH';
+      case 4: return 'APRIL';
+      case 5: return 'MAY';
+      case 6: return 'JUNE';
+      case 7: return 'JULY';
+      case 8: return 'AUGUST';
+      case 9: return 'SEPTEMBER';
+      case 10: return 'OCTOBER';
+      case 11: return 'NOVEMBER';
+      case 12: return 'DECEMBER';
+      default: return '';
+    }
+  }
+
+  String _getShortMonth(int month) {
+    switch (month) {
+      case 1: return 'JAN';
+      case 2: return 'FEB';
+      case 3: return 'MAR';
+      case 4: return 'APR';
+      case 5: return 'MAY';
+      case 6: return 'JUN';
+      case 7: return 'JUL';
+      case 8: return 'AUG';
+      case 9: return 'SEP';
+      case 10: return 'OCT';
+      case 11: return 'NOV';
+      case 12: return 'DEC';
+      default: return '';
+    }
   }
 
   Widget _buildFilterPill(String text, bool isSelected) {
@@ -103,8 +192,29 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLogEntry(
-      String day, String month, String time, String weight, String variance, bool isNegativeVariance) {
+  Widget _buildDynamicLogEntry(WeightEntry entry, double? variance, WeightProvider provider, BuildContext context) {
+    final day = entry.date.day.toString().padLeft(2, '0');
+    final month = _getShortMonth(entry.date.month);
+
+    // Time formatting
+    int hour = entry.date.hour;
+    final isPM = hour >= 12;
+    if (hour > 12) hour -= 12;
+    if (hour == 0) hour = 12;
+    final minute = entry.date.minute.toString().padLeft(2, '0');
+    final time = '${hour.toString().padLeft(2, '0')}:$minute ${isPM ? 'PM' : 'AM'}';
+
+    final weight = entry.weight.toStringAsFixed(1);
+
+    String varianceStr = '--';
+    bool isNegativeVariance = false;
+
+    if (variance != null) {
+      isNegativeVariance = variance < 0;
+      final signStr = variance > 0 ? '+' : '';
+      varianceStr = '$signStr${variance.toStringAsFixed(1)}';
+    }
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -175,31 +285,45 @@ class HistoryScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      isNegativeVariance ? Icons.trending_down : Icons.trending_up,
-                      size: 14,
-                      color: isNegativeVariance ? AppColors.positiveGreen : Colors.red,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      variance,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
+                if (variance != null)
+                  Row(
+                    children: [
+                      Icon(
+                        isNegativeVariance ? Icons.trending_down : Icons.trending_up,
+                        size: 14,
                         color: isNegativeVariance ? AppColors.positiveGreen : Colors.red,
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'vs 7D AVG',
-                      style: TextStyle(
-                          fontSize: 10, color: AppColors.textLight),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 4),
+                      Text(
+                        varianceStr,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: isNegativeVariance ? AppColors.positiveGreen : Colors.red,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'vs 7D AVG',
+                        style: TextStyle(
+                            fontSize: 10, color: AppColors.textLight),
+                      ),
+                    ],
+                  )
+                else
+                  const Text(
+                    'Needs more data',
+                    style: TextStyle(
+                        fontSize: 10, color: AppColors.textLight),
+                  ),
               ],
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: AppColors.dividerColor, size: 20),
+              onPressed: () {
+                provider.deleteEntry(entry.id);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Entry deleted.')));
+              },
             ),
           ],
         ),
