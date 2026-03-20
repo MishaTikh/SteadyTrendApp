@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart'; // for AppColors
 import '../providers/weight_provider.dart';
+import '../providers/settings_provider.dart';
 
 class TrendsScreen extends StatelessWidget {
   const TrendsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<WeightProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoading) {
+    return Consumer2<WeightProvider, SettingsProvider>(
+      builder: (context, provider, settings, child) {
+        if (provider.isLoading || settings.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -23,9 +24,13 @@ class TrendsScreen extends StatelessWidget {
         String subtitleText = 'Log more weight entries to see your progress.';
 
         if (has7Days) {
-          final current7DayAvg = provider.getRollingAverage(7) ?? 0;
-          final prev7DayAvg = provider.getRollingAverage(7, endDate: DateTime.now().subtract(const Duration(days: 7))) ?? 0;
-          final diff = current7DayAvg - prev7DayAvg;
+          final current7DayAvgLbs = provider.getRollingAverage(7) ?? 0;
+          final prev7DayAvgLbs = provider.getRollingAverage(7, endDate: DateTime.now().subtract(const Duration(days: 7))) ?? 0;
+          double diff = current7DayAvgLbs - prev7DayAvgLbs;
+
+          if (settings.preferredUnit == 'KG') {
+             diff /= 2.20462;
+          }
 
           if (diff < -0.2) {
             titleText = 'Your weight is\ntrending down.';
@@ -70,21 +75,24 @@ class TrendsScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 16, color: AppColors.textDark, height: 1.4),
                 ),
                 const SizedBox(height: 24),
-                if (has30Days) _buildAverageDeltaCard(provider),
+                if (has30Days) _buildAverageDeltaCard(provider, settings),
                 if (has30Days) const SizedBox(height: 24),
 
                 if (has7Days) _buildChangeCard(
                   provider,
+                  settings,
                   '1-Week Average\nChange',
                   7,
                 ),
                 if (has14Days) _buildChangeCard(
                   provider,
+                  settings,
                   '2-Week Average Change',
                   14,
                 ),
                 if (has30Days) _buildChangeCard(
                   provider,
+                  settings,
                   '1-Month Average Change',
                   30,
                 ),
@@ -109,10 +117,13 @@ class TrendsScreen extends StatelessWidget {
       },
     );
   }
-  Widget _buildAverageDeltaCard(WeightProvider provider) {
-    final current30DayAvg = provider.getRollingAverage(30) ?? 0;
-    final prev30DayAvg = provider.getRollingAverage(30, endDate: DateTime.now().subtract(const Duration(days: 30))) ?? 0;
-    final diff = current30DayAvg - prev30DayAvg;
+  Widget _buildAverageDeltaCard(WeightProvider provider, SettingsProvider settings) {
+    final current30DayAvgLbs = provider.getRollingAverage(30) ?? 0;
+    final prev30DayAvgLbs = provider.getRollingAverage(30, endDate: DateTime.now().subtract(const Duration(days: 30))) ?? 0;
+    double diff = current30DayAvgLbs - prev30DayAvgLbs;
+    if (settings.preferredUnit == 'KG') {
+       diff /= 2.20462;
+    }
     final isDown = diff <= 0;
     return Container(
       decoration: BoxDecoration(
@@ -141,7 +152,7 @@ class TrendsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${diff > 0 ? '+' : ''}${diff.toStringAsFixed(1)}kg',
+                '${diff > 0 ? '+' : ''}${diff.toStringAsFixed(1)} ${settings.preferredUnit}',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -155,11 +166,14 @@ class TrendsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChangeCard(WeightProvider provider, String title, int days) {
-    final currentAvg = provider.getRollingAverage(days) ?? 0;
-    final prevAvg = provider.getRollingAverage(days, endDate: DateTime.now().subtract(Duration(days: days))) ?? 0;
+  Widget _buildChangeCard(WeightProvider provider, SettingsProvider settings, String title, int days) {
+    final currentAvgLbs = provider.getRollingAverage(days) ?? 0;
+    final prevAvgLbs = provider.getRollingAverage(days, endDate: DateTime.now().subtract(Duration(days: days))) ?? 0;
 
-    if (prevAvg == 0) return const SizedBox(); // Need previous period data too
+    if (prevAvgLbs == 0) return const SizedBox(); // Need previous period data too
+
+    double currentAvg = settings.preferredUnit == 'KG' ? currentAvgLbs / 2.20462 : currentAvgLbs;
+    double prevAvg = settings.preferredUnit == 'KG' ? prevAvgLbs / 2.20462 : prevAvgLbs;
 
     final diff = currentAvg - prevAvg;
     final diffPct = (diff / prevAvg) * 100;
@@ -254,7 +268,7 @@ class TrendsScreen extends StatelessWidget {
                 const SizedBox(width: 16),
                 SizedBox(
                   width: 60,
-                  child: Text('${currentAvg.toStringAsFixed(1)}kg', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  child: Text('${currentAvg.toStringAsFixed(1)} ${settings.preferredUnit}', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 ),
               ],
             ),
@@ -275,7 +289,7 @@ class TrendsScreen extends StatelessWidget {
                 const SizedBox(width: 16),
                 SizedBox(
                   width: 60,
-                  child: Text('${prevAvg.toStringAsFixed(1)}kg', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                  child: Text('${prevAvg.toStringAsFixed(1)} ${settings.preferredUnit}', textAlign: TextAlign.right, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
                 ),
               ],
             ),
@@ -292,7 +306,7 @@ class TrendsScreen extends StatelessWidget {
                   children: [
                     const Text('DELTA', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0, color: AppColors.textLight)),
                     const SizedBox(height: 4),
-                    Text('${diff > 0 ? '+' : ''}${diff.toStringAsFixed(1)}kg', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDown ? AppColors.primaryGreen : Colors.red)),
+                    Text('${diff > 0 ? '+' : ''}${diff.toStringAsFixed(1)} ${settings.preferredUnit}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: isDown ? AppColors.primaryGreen : Colors.red)),
                     const SizedBox(height: 4),
                     Row(
                       mainAxisSize: MainAxisSize.min,

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../main.dart'; // for AppColors
 import '../providers/weight_provider.dart';
+import '../providers/settings_provider.dart';
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -13,21 +14,32 @@ class LogScreen extends StatefulWidget {
 
 class _LogScreenState extends State<LogScreen> {
   DateTime _selectedDate = DateTime.now();
-  String _selectedUnit = 'KG';
-  double _currentWeight = 70.0;
+  String _selectedUnit = 'LBS';
+  double _currentWeight = 150.0;
+  bool _initialized = false;
 
   @override
-  void initState() {
-    super.initState();
-    // Default weight can be the last logged weight
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
       final provider = Provider.of<WeightProvider>(context, listen: false);
-      if (provider.entries.isNotEmpty) {
-        setState(() {
-          _currentWeight = provider.entries.first.weight;
-        });
-      }
-    });
+      final settings = Provider.of<SettingsProvider>(context, listen: false);
+
+      setState(() {
+        _selectedUnit = settings.preferredUnit;
+        if (provider.entries.isNotEmpty) {
+          double lastWeight = provider.entries.first.weight; // stored in LBS
+          if (_selectedUnit == 'KG') {
+            _currentWeight = lastWeight / 2.20462;
+          } else {
+            _currentWeight = lastWeight;
+          }
+        } else {
+          _currentWeight = _selectedUnit == 'KG' ? 70.0 : 150.0;
+        }
+        _initialized = true;
+      });
+    }
   }
 
   void _selectDate(BuildContext context) async {
@@ -209,24 +221,12 @@ class _LogScreenState extends State<LogScreen> {
         children: [
           GestureDetector(
             onTap: () {
-              setState(() {
-                _selectedUnit = 'KG';
-              });
-            },
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: _selectedUnit == 'KG' ? AppColors.primaryGreen : Colors.transparent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text('KG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'KG' ? Colors.white : AppColors.textDark)),
-            ),
-          ),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _selectedUnit = 'LBS';
-              });
+              if (_selectedUnit != 'LBS') {
+                setState(() {
+                  _selectedUnit = 'LBS';
+                  _currentWeight = _currentWeight * 2.20462;
+                });
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -235,6 +235,24 @@ class _LogScreenState extends State<LogScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text('LBS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'LBS' ? Colors.white : AppColors.textDark)),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              if (_selectedUnit != 'KG') {
+                setState(() {
+                  _selectedUnit = 'KG';
+                  _currentWeight = _currentWeight / 2.20462;
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _selectedUnit == 'KG' ? AppColors.primaryGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text('KG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'KG' ? Colors.white : AppColors.textDark)),
             ),
           ),
         ],

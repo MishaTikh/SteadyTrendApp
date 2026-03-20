@@ -2,9 +2,9 @@ import 'dart:convert';
 
 class WeightEntry {
   final String id;
-  final double weight; // stored internally as kg for consistency
+  final double weight; // stored internally as LBS for consistency
   final DateTime date;
-  final String unit; // 'kg' or 'lbs', just for display preference of this specific entry
+  final String unit; // usually 'LBS' now, but retained for model compatibility
 
   WeightEntry({
     required this.id,

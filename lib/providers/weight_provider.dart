@@ -21,6 +21,23 @@ class WeightProvider with ChangeNotifier {
       _entries = entryStrings.map((str) => WeightEntry.fromJson(str)).toList();
     }
 
+    // Migration to LBS (internal storage default)
+    // If we have no flag, we assume existing weights were stored in KG.
+    final bool hasMigratedToLbs = prefs.getBool('migrated_to_lbs') ?? false;
+    if (!hasMigratedToLbs && _entries.isNotEmpty) {
+      for (int i = 0; i < _entries.length; i++) {
+        // Convert existing KG to LBS
+        _entries[i] = WeightEntry(
+          id: _entries[i].id,
+          weight: _entries[i].weight * 2.20462,
+          date: _entries[i].date,
+          unit: 'LBS',
+        );
+      }
+      await _saveEntries();
+      await prefs.setBool('migrated_to_lbs', true);
+    }
+
     _isLoading = false;
     notifyListeners();
   }
@@ -32,12 +49,10 @@ class WeightProvider with ChangeNotifier {
   }
 
   Future<void> addWeight(double weight, DateTime date, String unit) async {
-    // If unit is lbs, we store it internally as kg for consistency
+    // Internal storage is LBS
     double storedWeight = weight;
-    if (unit == 'LBS') {
-       // but wait, let's keep it simple: we store the value as it is and convert on UI, OR
-       // standard is KG. 1 kg = 2.20462 lbs
-       storedWeight = weight / 2.20462;
+    if (unit == 'KG') {
+       storedWeight = weight * 2.20462;
     }
 
     // Check if entry for this date already exists
@@ -49,10 +64,36 @@ class WeightProvider with ChangeNotifier {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       weight: storedWeight,
       date: date,
-      unit: unit,
+      unit: 'LBS',
     );
 
     _entries.add(entry);
+    await _saveEntries();
+    notifyListeners();
+  }
+
+  Future<void> updateWeight(String id, double weight, DateTime date, String unit) async {
+    final index = _entries.indexWhere((e) => e.id == id);
+    if (index == -1) return;
+
+    // Internal storage is LBS
+    double storedWeight = weight;
+    if (unit == 'KG') {
+       storedWeight = weight * 2.20462;
+    }
+
+    // Check if updating the date causes a conflict with another entry
+    final dateOnly = DateTime(date.year, date.month, date.day);
+    _entries.removeWhere((e) =>
+        e.id != id && DateTime(e.date.year, e.date.month, e.date.day) == dateOnly);
+
+    _entries[index] = WeightEntry(
+      id: id,
+      weight: storedWeight,
+      date: date,
+      unit: 'LBS',
+    );
+
     await _saveEntries();
     notifyListeners();
   }
