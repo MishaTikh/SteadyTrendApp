@@ -130,6 +130,100 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
+  void _showBulkAddModal(BuildContext context, WeightProvider provider, SettingsProvider settings) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) {
+        DateTime currentDate = DateTime.now();
+        final TextEditingController controller = TextEditingController();
+        final FocusNode focusNode = FocusNode();
+
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 24,
+                right: 24,
+                top: 24,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Quick Backlog Entry', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(DateFormat('MMMM d, yyyy').format(currentDate), style: const TextStyle(fontSize: 18)),
+                      TextButton(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: currentDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime.now()
+                          );
+                          if (picked != null) {
+                            setState(() {
+                              currentDate = picked;
+                            });
+                          }
+                        },
+                        child: const Text('Change Date'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Weight (${settings.preferredUnit})',
+                      border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        icon: const Icon(Icons.check, color: AppColors.primaryGreen),
+                        onPressed: () {
+                          final val = controller.text;
+                          final parsed = double.tryParse(val);
+                          if (parsed != null) {
+                            provider.addWeight(parsed, currentDate, settings.preferredUnit);
+                            setState(() {
+                              currentDate = currentDate.subtract(const Duration(days: 1));
+                              controller.clear();
+                            });
+                            focusNode.requestFocus();
+                          }
+                        },
+                      ),
+                    ),
+                    onSubmitted: (val) {
+                      final parsed = double.tryParse(val);
+                      if (parsed != null) {
+                        provider.addWeight(parsed, currentDate, settings.preferredUnit);
+                        setState(() {
+                          currentDate = currentDate.subtract(const Duration(days: 1));
+                          controller.clear();
+                        });
+                        focusNode.requestFocus();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Press Enter or tap Check to save and move to previous day.', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            );
+          }
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer2<WeightProvider, SettingsProvider>(
@@ -157,11 +251,19 @@ class HistoryScreen extends StatelessWidget {
                         color: AppColors.textDark,
                       ),
                     ),
-                    if (entries.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.download, color: AppColors.primaryGreen),
-                        onPressed: () => _exportCSV(entries, settings.preferredUnit),
-                      ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.playlist_add, color: AppColors.primaryGreen),
+                          onPressed: () => _showBulkAddModal(context, provider, settings),
+                        ),
+                        if (entries.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.download, color: AppColors.primaryGreen),
+                            onPressed: () => _exportCSV(entries, settings.preferredUnit),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
             const SizedBox(height: 4),

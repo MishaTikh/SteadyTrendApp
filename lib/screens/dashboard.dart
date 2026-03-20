@@ -59,24 +59,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTimePills() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.dividerColor.withOpacity(0.5),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        padding: const EdgeInsets.all(4),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildPill('1 WEEK'),
-            _buildPill('2 WEEKS'),
-            _buildPill('1 MONTH'),
-            _buildPill('1 YEAR'),
-            _buildPill('ALL TIME'),
-          ],
-        ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.dividerColor.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      padding: const EdgeInsets.all(4),
+      child: Row(
+        mainAxisSize: MainAxisSize.max,
+        children: [
+          Expanded(child: _buildPill('1 WEEK')),
+          Expanded(child: _buildPill('2 WEEKS')),
+          Expanded(child: _buildPill('1 MONTH')),
+          Expanded(child: _buildPill('1 YEAR')),
+          Expanded(child: _buildPill('ALL TIME')),
+        ],
       ),
     );
   }
@@ -90,7 +87,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        alignment: Alignment.center,
         decoration: BoxDecoration(
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
@@ -98,13 +96,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
               : null,
         ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-            color: isSelected ? AppColors.textDark : AppColors.textLight,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.5,
+              color: isSelected ? AppColors.textDark : AppColors.textLight,
+            ),
           ),
         ),
       ),
@@ -218,6 +219,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final double maxX = maxDays > 0 ? maxDays.toDouble() : 1.0;
 
+    double yInterval = (maxWeight - minWeight) / 2;
+    if (yInterval <= 0) yInterval = 1.0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -244,12 +248,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 120,
               child: LineChart(
                 LineChartData(
-                  gridData: const FlGridData(show: true, drawVerticalLine: false),
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    horizontalInterval: yInterval,
+                  ),
                   titlesData: FlTitlesData(
                     show: true,
                     topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
                     rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                        interval: yInterval,
+                        getTitlesWidget: (value, meta) {
+                          return SideTitleWidget(
+                            meta: meta,
+                            space: 8,
+                            child: Text(
+                              value.toStringAsFixed(0),
+                              style: const TextStyle(color: AppColors.textLight, fontSize: 10),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                     bottomTitles: AxisTitles(
                       sideTitles: SideTitles(
                         showTitles: true,
@@ -297,7 +321,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: AppColors.primaryGreen,
                         barWidth: 2,
                         isStrokeCapRound: true,
-                        dotData: FlDotData(show: trendSpots.length < 10),
+                        dotData: const FlDotData(show: false),
                         belowBarData: BarAreaData(
                           show: true,
                           color: AppColors.primaryGreen.withOpacity(0.05),

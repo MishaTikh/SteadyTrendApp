@@ -16,6 +16,7 @@ class _LogScreenState extends State<LogScreen> {
   DateTime _selectedDate = DateTime.now();
   String _selectedUnit = 'LBS';
   double _currentWeight = 150.0;
+  late ScrollController _scrollController;
   bool _initialized = false;
 
   @override
@@ -37,9 +38,20 @@ class _LogScreenState extends State<LogScreen> {
         } else {
           _currentWeight = _selectedUnit == 'KG' ? 70.0 : 150.0;
         }
+
+        // 1 unit = 100 pixels (since each 0.1 increment is 10 pixels wide)
+        _scrollController = ScrollController(
+          initialScrollOffset: _currentWeight * 100,
+        );
         _initialized = true;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _selectDate(BuildContext context) async {
@@ -120,27 +132,14 @@ class _LogScreenState extends State<LogScreen> {
                         children: [
                           SizedBox(
                             width: 150,
-                            child: TextField(
-                              controller: TextEditingController(text: _currentWeight.toStringAsFixed(1))
-                                ..selection = TextSelection.fromPosition(TextPosition(offset: _currentWeight.toStringAsFixed(1).length)),
-                              onChanged: (val) {
-                                final parsed = double.tryParse(val);
-                                if (parsed != null) {
-                                  _currentWeight = parsed;
-                                }
-                              },
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            child: Text(
+                              _currentWeight.toStringAsFixed(1),
                               textAlign: TextAlign.right,
                               style: const TextStyle(
-                                fontSize: 64, // adjusted to fit textfield well
+                                fontSize: 64,
                                 fontWeight: FontWeight.w900,
                                 color: AppColors.textDark,
                                 height: 1.0,
-                              ),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
                               ),
                             ),
                           ),
@@ -261,24 +260,62 @@ class _LogScreenState extends State<LogScreen> {
   }
 
   Widget _buildVisualRuler() {
-    return SizedBox(
-      height: 40,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: List.generate(9, (index) {
-          final isCenter = index == 4;
-          return Container(
-            margin: const EdgeInsets.symmetric(horizontal: 8),
-            width: isCenter ? 4 : 2,
-            height: isCenter ? 32 : 16,
-            decoration: BoxDecoration(
-              color: isCenter ? AppColors.primaryGreen.withOpacity(0.4) : AppColors.dividerColor,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          );
-        }),
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final halfWidth = constraints.maxWidth / 2;
+
+        return SizedBox(
+          height: 80,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              NotificationListener<ScrollNotification>(
+                onNotification: (ScrollNotification notification) {
+                  if (notification is ScrollUpdateNotification) {
+                    setState(() {
+                      _currentWeight = notification.metrics.pixels / 100;
+                      if (_currentWeight < 0) _currentWeight = 0;
+                    });
+                  }
+                  return true;
+                },
+                child: ListView.builder(
+                  controller: _scrollController,
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(horizontal: halfWidth),
+                  itemBuilder: (context, index) {
+                    final isWholeNumber = index % 10 == 0;
+                    final isHalfNumber = index % 5 == 0 && !isWholeNumber;
+
+                    double height = 16;
+                    if (isWholeNumber) height = 40;
+                    else if (isHalfNumber) height = 24;
+
+                    return Container(
+                      width: 10,
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 2,
+                        height: height,
+                        color: isWholeNumber ? AppColors.textDark : AppColors.dividerColor,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              Container(
+                width: 4,
+                height: 50,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryGreen,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
