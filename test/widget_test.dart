@@ -11,13 +11,17 @@ import 'package:provider/provider.dart';
 
 import 'package:app/main.dart';
 import 'package:app/providers/weight_provider.dart';
+import 'package:app/providers/settings_provider.dart';
 
 void main() {
   testWidgets('App loads smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(
-      ChangeNotifierProvider(
-        create: (context) => WeightProvider(),
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => WeightProvider()),
+          ChangeNotifierProvider(create: (_) => SettingsProvider()),
+        ],
         child: const MyApp(),
       ),
     );

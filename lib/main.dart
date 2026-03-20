@@ -3,13 +3,18 @@ import 'screens/dashboard.dart';
 import 'screens/history.dart';
 import 'package:provider/provider.dart';
 import 'providers/weight_provider.dart';
+import 'providers/settings_provider.dart';
 import 'screens/trends.dart';
 import 'screens/log.dart';
+import 'screens/settings.dart';
 
 void main() {
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => WeightProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => WeightProvider()),
+        ChangeNotifierProvider(create: (_) => SettingsProvider()),
+      ],
       child: const MyApp(),
     ),
   );
@@ -104,13 +109,14 @@ class _MainScreenState extends State<MainScreen> {
             ],
           ),
           actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 16.0),
-              child: CircleAvatar(
-                backgroundColor: Colors.brown[200],
-                radius: 18,
-                child: const Icon(Icons.person, color: Colors.white, size: 24),
-              ),
+            IconButton(
+              icon: const Icon(Icons.settings, color: AppColors.textDark),
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const SettingsScreen(),
+                  fullscreenDialog: true,
+                ));
+              },
             ),
           ],
         ),
