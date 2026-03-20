@@ -1,62 +1,120 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../main.dart'; // for AppColors
+import '../providers/weight_provider.dart';
+import '../models/weight_entry.dart';
 
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'History',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textDark,
-              ),
-            ),
+    return Consumer<WeightProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        final entries = provider.entries;
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'History',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                  ),
+                ),
             const SizedBox(height: 4),
             const Text(
               'Recorded logs and 7-day average variance.',
               style: TextStyle(fontSize: 16, color: AppColors.textLight),
             ),
             const SizedBox(height: 24),
-            Row(
-              children: [
-                _buildFilterPill('All Weight', true),
-                const SizedBox(width: 8),
-                _buildFilterPill('Metric Variations', false),
+                Row(
+                  children: [
+                    _buildFilterPill('All Weight', true),
+                    const SizedBox(width: 8),
+                    _buildFilterPill('Metric Variations', false),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                if (entries.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 48.0),
+                    child: Center(
+                      child: Text(
+                        'No weight records found.',
+                        style: TextStyle(color: AppColors.textLight, fontSize: 16),
+                      ),
+                    ),
+                  )
+                else
+                  ..._buildHistoryList(entries, provider),
+                const SizedBox(height: 48),
+                if (entries.isNotEmpty)
+                  const Center(
+                    child: Text(
+                      'END OF RECORDS',
+                      style: TextStyle(
+                        fontSize: 12,
+                        letterSpacing: 1.5,
+                        color: AppColors.textLight,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                const SizedBox(height: 80), // padding for FAB
               ],
             ),
-            const SizedBox(height: 32),
-            _buildMonthSection('SEPTEMBER 2023'),
-            _buildLogEntry('28', 'SEP', '07:14 AM', '82.4', '-0.2', true),
-            _buildLogEntry('25', 'SEP', '08:00 AM', '82.6', '+0.5', false),
-            const SizedBox(height: 24),
-            _buildMonthSection('AUGUST 2023'),
-            _buildLogEntry('30', 'AUG', '07:30 AM', '82.1', '-1.2', true),
-            const SizedBox(height: 48),
-            const Center(
-              child: Text(
-                'END OF RECORDS',
-                style: TextStyle(
-                  fontSize: 12,
-                  letterSpacing: 1.5,
-                  color: AppColors.textLight,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 80), // padding for FAB
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
+  }
+
+  List<Widget> _buildHistoryList(List<WeightEntry> entries, WeightProvider provider) {
+    List<Widget> widgets = [];
+    String currentMonthYear = '';
+
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      final monthYear = DateFormat('MMMM yyyy').format(entry.date).toUpperCase();
+
+      if (monthYear != currentMonthYear) {
+        if (i > 0) widgets.add(const SizedBox(height: 24));
+        widgets.add(_buildMonthSection(monthYear));
+        currentMonthYear = monthYear;
+      }
+
+      final day = DateFormat('dd').format(entry.date);
+      final month = DateFormat('MMM').format(entry.date).toUpperCase();
+      final time = DateFormat('hh:mm a').format(entry.date);
+      final weightStr = entry.weight.toStringAsFixed(1);
+
+      // Calculate variance from previous 7 days
+      final avg = provider.getRollingAverage(7, endDate: entry.date.subtract(const Duration(days: 1)));
+
+      String varianceStr = '--';
+      bool isNegativeVariance = true;
+
+      if (avg != null) {
+        final variance = entry.weight - avg;
+        isNegativeVariance = variance <= 0;
+        varianceStr = '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(1)}';
+      }
+
+      widgets.add(_buildLogEntry(day, month, time, weightStr, varianceStr, isNegativeVariance));
+    }
+
+    return widgets;
   }
 
   Widget _buildFilterPill(String text, bool isSelected) {

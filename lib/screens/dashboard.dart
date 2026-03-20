@@ -1,26 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../main.dart'; // for AppColors
+import '../providers/weight_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Weight Momentum',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                color: AppColors.textDark,
-              ),
-            ),
+    return Consumer<WeightProvider>(
+      builder: (context, provider, child) {
+        if (provider.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Weight Momentum',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                  ),
+                ),
             const SizedBox(height: 4),
             const Text(
               'Focusing on your weight trends over time.',
@@ -31,14 +40,16 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildDailyDataToggle(),
             const SizedBox(height: 16),
-            _buildChartCard(),
-            _buildWeeklyMomentumCard(),
-            _buildProgressCard(),
-            _buildForecastCard(),
-            const SizedBox(height: 80), // padding for fab if any or bottom nav
-          ],
-        ),
-      ),
+                _buildChartCard(provider),
+                if (provider.hasDataSpan(7)) _buildWeeklyMomentumCard(provider),
+                _buildProgressCard(),
+                if (provider.hasDataSpan(7)) _buildForecastCard(provider),
+                const SizedBox(height: 80), // padding for fab if any or bottom nav
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -113,7 +124,53 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildChartCard() {
+  Widget _buildChartCard(WeightProvider provider) {
+    if (provider.entries.isEmpty) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        child: const Padding(
+          padding: EdgeInsets.all(32.0),
+          child: Center(
+            child: Text(
+              'No weight data yet. Log your weight to see your trend.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textLight, fontSize: 16),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final entries = List.from(provider.entries.reversed);
+
+    // Calculate min/max for chart bounds
+    double minWeight = double.infinity;
+    double maxWeight = double.negativeInfinity;
+
+    for (var entry in entries) {
+      if (entry.weight < minWeight) minWeight = entry.weight;
+      if (entry.weight > maxWeight) maxWeight = entry.weight;
+    }
+
+    // Add padding to bounds
+    minWeight = (minWeight - 2).floorToDouble();
+    maxWeight = (maxWeight + 2).ceilToDouble();
+
+    // Map entries to FlSpot
+    List<FlSpot> spots = [];
+    if (entries.length == 1) {
+       spots.add(FlSpot(0, entries[0].weight));
+       spots.add(FlSpot(1, entries[0].weight));
+    } else {
+      final firstDate = entries.first.date;
+      for (var entry in entries) {
+        final days = entry.date.difference(firstDate).inDays.toDouble();
+        spots.add(FlSpot(days, entry.weight));
+      }
+    }
+
+    final maxX = spots.last.x;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -151,39 +208,37 @@ class DashboardScreen extends StatelessWidget {
                         showTitles: true,
                         reservedSize: 22,
                         getTitlesWidget: (value, meta) {
-                          const style = TextStyle(color: AppColors.textLight, fontSize: 10);
-                          String text = '';
-                          if (value == 0) text = 'OCT 14';
-                          else if (value == 3) text = 'OCT 21';
-                          else if (value == 6) text = 'OCT 28';
-                          else if (value == 9) text = 'NOV 04';
-                          return SideTitleWidget(
-                            meta: meta,
-                            space: 8,
-                            child: Text(text, style: style),
-                          );
+                          if (entries.isEmpty) return const SizedBox();
+
+                          // Display date for first, last, and maybe middle points
+                          if (value == 0 || value == maxX || (maxX > 0 && value == (maxX / 2).roundToDouble())) {
+                             final firstDate = entries.first.date;
+                             final date = firstDate.add(Duration(days: value.toInt()));
+                             const style = TextStyle(color: AppColors.textLight, fontSize: 10);
+                             return SideTitleWidget(
+                              meta: meta,
+                              space: 8,
+                              child: Text(DateFormat('MMM dd').format(date).toUpperCase(), style: style),
+                            );
+                          }
+                          return const SizedBox();
                         },
                       ),
                     ),
                   ),
                   borderData: FlBorderData(show: false),
                   minX: 0,
-                  maxX: 9,
-                  minY: 70,
-                  maxY: 80,
+                  maxX: maxX > 0 ? maxX : 1,
+                  minY: minWeight,
+                  maxY: maxWeight,
                   lineBarsData: [
                     LineChartBarData(
-                      spots: const [
-                        FlSpot(0, 72),
-                        FlSpot(3, 73),
-                        FlSpot(6, 75),
-                        FlSpot(9, 77),
-                      ],
+                      spots: spots,
                       isCurved: true,
                       color: AppColors.primaryGreen,
                       barWidth: 2,
                       isStrokeCapRound: true,
-                      dotData: const FlDotData(show: false),
+                      dotData: FlDotData(show: spots.length < 10),
                       belowBarData: BarAreaData(
                         show: true,
                         color: AppColors.primaryGreen.withOpacity(0.05),
@@ -199,7 +254,17 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWeeklyMomentumCard() {
+  Widget _buildWeeklyMomentumCard(WeightProvider provider) {
+    final current7DayAvg = provider.getRollingAverage(7);
+    final previous7DayAvg = provider.getRollingAverage(7, endDate: DateTime.now().subtract(const Duration(days: 7)));
+
+    if (current7DayAvg == null || previous7DayAvg == null) {
+      return const SizedBox();
+    }
+
+    final diff = current7DayAvg - previous7DayAvg;
+    final isDown = diff <= 0;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -222,21 +287,21 @@ class DashboardScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                const Text(
-                  '-1.4',
-                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
+                Text(
+                  diff.abs().toStringAsFixed(1),
+                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: isDown ? AppColors.primaryGreen : Colors.red),
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  'LBS',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.primaryGreen),
+                  'KG', // keeping default as KG
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDown ? AppColors.primaryGreen : Colors.red),
                 ),
               ],
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Weight is trending downward compared to last week',
-              style: TextStyle(fontSize: 14, color: AppColors.textDark),
+            Text(
+              isDown ? 'Weight is trending downward compared to last week' : 'Weight is trending upward compared to last week',
+              style: const TextStyle(fontSize: 14, color: AppColors.textDark),
             ),
           ],
         ),
@@ -304,7 +369,27 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildForecastCard() {
+  Widget _buildForecastCard(WeightProvider provider) {
+    final current7DayAvg = provider.getRollingAverage(7);
+    final previous7DayAvg = provider.getRollingAverage(7, endDate: DateTime.now().subtract(const Duration(days: 7)));
+
+    if (current7DayAvg == null || previous7DayAvg == null) {
+      return const SizedBox();
+    }
+
+    final diff = current7DayAvg - previous7DayAvg;
+    // Assume a goal weight of 70kg for display purposes, as we don't have user settings yet
+    const double goalWeight = 70.0;
+
+    if (diff >= 0 || current7DayAvg <= goalWeight) {
+      return const SizedBox(); // Not losing weight or already reached goal
+    }
+
+    // Days to reach goal = (current - goal) / (-diff/7 days)
+    final dailyRate = diff / 7.0;
+    final daysToGoal = ((current7DayAvg - goalWeight) / -dailyRate).round();
+    final forecastDate = DateTime.now().add(Duration(days: daysToGoal));
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -324,11 +409,11 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             RichText(
-              text: const TextSpan(
-                style: TextStyle(fontSize: 16, color: AppColors.textDark, height: 1.4),
+              text: TextSpan(
+                style: const TextStyle(fontSize: 16, color: AppColors.textDark, height: 1.4),
                 children: [
-                  TextSpan(text: "At your current rate, you're projected to reach your goal by "),
-                  TextSpan(text: "January 12", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
+                  const TextSpan(text: "At your current rate, you're projected to reach your goal by "),
+                  TextSpan(text: DateFormat('MMMM d').format(forecastDate), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGreen)),
                 ],
               ),
             ),
