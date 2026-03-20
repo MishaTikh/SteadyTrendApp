@@ -1,8 +1,72 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import '../main.dart'; // for AppColors
+import '../providers/weight_provider.dart';
 
-class LogScreen extends StatelessWidget {
+class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
+
+  @override
+  State<LogScreen> createState() => _LogScreenState();
+}
+
+class _LogScreenState extends State<LogScreen> {
+  DateTime _selectedDate = DateTime.now();
+  String _selectedUnit = 'KG';
+  double _currentWeight = 70.0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Default weight can be the last logged weight
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final provider = Provider.of<WeightProvider>(context, listen: false);
+      if (provider.entries.isNotEmpty) {
+        setState(() {
+          _currentWeight = provider.entries.first.weight;
+        });
+      }
+    });
+  }
+
+  void _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppColors.primaryGreen,
+              onPrimary: Colors.white,
+              onSurface: AppColors.textDark,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null && picked != _selectedDate) {
+      setState(() {
+        _selectedDate = picked;
+      });
+    }
+  }
+
+  void _saveWeight() {
+    Provider.of<WeightProvider>(context, listen: false)
+        .addWeight(_currentWeight, _selectedDate, _selectedUnit);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Weight logged successfully!'),
+        backgroundColor: AppColors.primaryGreen,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,19 +97,39 @@ class LogScreen extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
                   child: Column(
                     children: [
-                      _buildDatePickerPill(),
+                      GestureDetector(
+                        onTap: () => _selectDate(context),
+                        child: _buildDatePickerPill(),
+                      ),
                       const SizedBox(height: 32),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            '78.4',
-                            style: TextStyle(
-                              fontSize: 96,
-                              fontWeight: FontWeight.w900,
-                              color: AppColors.textDark,
-                              height: 1.0,
+                          SizedBox(
+                            width: 150,
+                            child: TextField(
+                              controller: TextEditingController(text: _currentWeight.toStringAsFixed(1))
+                                ..selection = TextSelection.fromPosition(TextPosition(offset: _currentWeight.toStringAsFixed(1).length)),
+                              onChanged: (val) {
+                                final parsed = double.tryParse(val);
+                                if (parsed != null) {
+                                  _currentWeight = parsed;
+                                }
+                              },
+                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontSize: 64, // adjusted to fit textfield well
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.textDark,
+                                height: 1.0,
+                              ),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 8),
@@ -59,7 +143,7 @@ class LogScreen extends StatelessWidget {
                         width: double.infinity,
                         height: 56,
                         child: ElevatedButton(
-                          onPressed: () {},
+                          onPressed: _saveWeight,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primaryGreen,
                             foregroundColor: Colors.white,
@@ -84,20 +168,25 @@ class LogScreen extends StatelessWidget {
   }
 
   Widget _buildDatePickerPill() {
+    String dateText = DateFormat('MMM dd').format(_selectedDate).toUpperCase();
+    if (_selectedDate.year == DateTime.now().year && _selectedDate.month == DateTime.now().month && _selectedDate.day == DateTime.now().day) {
+      dateText = 'TODAY, $dateText';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.dividerColor.withOpacity(0.3),
         borderRadius: BorderRadius.circular(24),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.calendar_today, size: 16, color: AppColors.primaryGreen),
-          SizedBox(width: 8),
+          const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryGreen),
+          const SizedBox(width: 8),
           Text(
-            'TODAY, OCT 24',
-            style: TextStyle(
+            dateText,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
               letterSpacing: 1.5,
@@ -118,17 +207,35 @@ class LogScreen extends StatelessWidget {
       padding: const EdgeInsets.all(4),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primaryGreen,
-              borderRadius: BorderRadius.circular(12),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedUnit = 'KG';
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _selectedUnit == 'KG' ? AppColors.primaryGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text('KG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'KG' ? Colors.white : AppColors.textDark)),
             ),
-            child: const Text('KG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: const Text('LBS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedUnit = 'LBS';
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: _selectedUnit == 'LBS' ? AppColors.primaryGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text('LBS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'LBS' ? Colors.white : AppColors.textDark)),
+            ),
           ),
         ],
       ),

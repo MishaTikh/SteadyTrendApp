@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'screens/dashboard.dart';
 import 'screens/history.dart';
+import 'package:provider/provider.dart';
+import 'providers/weight_provider.dart';
 import 'screens/trends.dart';
 import 'screens/log.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => WeightProvider(),
+      child: const MyApp(),
+    ),
+  );
 }
 
 class AppColors {
