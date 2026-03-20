@@ -103,7 +103,7 @@ class _MainScreenState extends State<MainScreen> {
         child: AppBar(
           title: Row(
             children: [
-              const Icon(Icons.show_chart, color: AppColors.primaryGreen, size: 28),
+              const Icon(Icons.trending_down, color: AppColors.primaryGreen, size: 28),
               const SizedBox(width: 8),
               const Text('KINETIC', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
             ],
