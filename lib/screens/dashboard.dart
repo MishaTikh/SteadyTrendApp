@@ -15,6 +15,7 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String _selectedTimeSpan = '1 MONTH';
+  double _panOffsetDays = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onTap: () {
         setState(() {
           _selectedTimeSpan = text;
+          _panOffsetDays = 0.0;
         });
       },
       child: Container(
@@ -131,39 +133,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     // Filter entries based on selected time span
     final now = DateTime.now();
-    DateTime startDate;
+    DateTime baseStartDate;
     int maxDays = 0;
 
     switch (_selectedTimeSpan) {
       case '1 WEEK':
         maxDays = 7;
-        startDate = now.subtract(const Duration(days: 7));
+        baseStartDate = now.subtract(const Duration(days: 7));
         break;
       case '2 WEEKS':
         maxDays = 14;
-        startDate = now.subtract(const Duration(days: 14));
+        baseStartDate = now.subtract(const Duration(days: 14));
         break;
       case '1 MONTH':
         maxDays = 30;
-        startDate = now.subtract(const Duration(days: 30));
+        baseStartDate = now.subtract(const Duration(days: 30));
         break;
       case '1 YEAR':
         maxDays = 365;
-        startDate = now.subtract(const Duration(days: 365));
+        baseStartDate = now.subtract(const Duration(days: 365));
         break;
       case 'ALL TIME':
       default:
         // Use earliest entry
         if (provider.entries.isNotEmpty) {
-           startDate = provider.entries.last.date;
+           baseStartDate = provider.entries.last.date;
         } else {
-           startDate = now.subtract(const Duration(days: 30));
+           baseStartDate = now.subtract(const Duration(days: 30));
         }
-        maxDays = now.difference(startDate).inDays;
+        maxDays = now.difference(baseStartDate).inDays;
         break;
     }
 
-    final entries = List.from(provider.entries.where((e) => e.date.isAfter(startDate.subtract(const Duration(days: 1)))).toList().reversed);
+    if (maxDays == 0) maxDays = 1;
+
+    // Apply pan offset
+    final panDuration = Duration(hours: (_panOffsetDays * 24).round());
+    final startDate = baseStartDate.subtract(panDuration);
+    final endDate = startDate.add(Duration(days: maxDays));
+
+    final entries = List.from(provider.entries.where((e) =>
+      e.date.isAfter(startDate.subtract(const Duration(days: 1))) &&
+      e.date.isBefore(endDate.add(const Duration(days: 1)))
+    ).toList().reversed);
 
     // Map entries to FlSpot and adjust weights based on preferred unit
     List<FlSpot> dotsSpots = [];
@@ -244,11 +256,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             const SizedBox(height: 20),
-            SizedBox(
-              height: 120,
-              child: LineChart(
-                LineChartData(
-                  gridData: FlGridData(
+            GestureDetector(
+              onHorizontalDragUpdate: (details) {
+                if (_selectedTimeSpan == 'ALL TIME') return;
+                setState(() {
+                  double daysPerPixel = maxDays / MediaQuery.of(context).size.width;
+                  _panOffsetDays += details.primaryDelta! * daysPerPixel;
+                  if (_panOffsetDays < 0) _panOffsetDays = 0;
+                });
+              },
+              child: SizedBox(
+                height: 120,
+                child: LineChart(
+                  LineChartData(
+                    lineTouchData: const LineTouchData(enabled: false),
+                    clipData: const FlClipData.all(),
+                    gridData: FlGridData(
                     show: true,
                     drawVerticalLine: false,
                     horizontalInterval: yInterval,
@@ -310,6 +333,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         barWidth: 0, // hide line, only show dots
                         isStrokeCapRound: true,
                         dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) {
+                          final spotDate = startDate.add(Duration(days: spot.x.toInt()));
+                          if (spotDate.weekday == DateTime.saturday || spotDate.weekday == DateTime.sunday) {
+                            return FlDotCirclePainter(radius: 3, color: Colors.amber.withOpacity(0.8), strokeWidth: 0);
+                          }
                           return FlDotCirclePainter(radius: 3, color: AppColors.primaryGreen.withOpacity(0.4), strokeWidth: 0);
                         }),
                         belowBarData: BarAreaData(show: false),
@@ -330,6 +357,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
+            ),
             ),
           ],
         ),
