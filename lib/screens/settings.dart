@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart'; // for AppColors
 import '../providers/settings_provider.dart';
+import '../providers/weight_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -141,6 +142,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: Switch(
                     value: settings.showDailyData,
                     onChanged: (val) => settings.updateShowDailyData(val),
+                    activeColor: AppColors.primaryGreen,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              _buildSectionTitle('DEVELOPER'),
+              Card(
+                child: ListTile(
+                  title: const Text('Demo Mode', style: TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: const Text('Show a synthetic 1-year dataset for taking screenshots.'),
+                  trailing: Switch(
+                    value: settings.isDemoMode,
+                    onChanged: (val) {
+                      settings.setDemoMode(val);
+                      // Update _goalController text to show the new demo goal or restored real goal
+                      _goalController.text = settings.goalWeight.toStringAsFixed(1);
+                      Provider.of<WeightProvider>(context, listen: false).setDemoMode(val);
+                    },
                     activeColor: AppColors.primaryGreen,
                   ),
                 ),
