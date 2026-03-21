@@ -9,9 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:app/main.dart';
-import 'package:app/providers/weight_provider.dart';
-import 'package:app/providers/settings_provider.dart';
+import 'package:steadytrend/main.dart';
+import 'package:steadytrend/providers/weight_provider.dart';
+import 'package:steadytrend/providers/settings_provider.dart';
 
 void main() {
   testWidgets('App loads smoke test', (WidgetTester tester) async {
