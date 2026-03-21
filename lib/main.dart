@@ -7,8 +7,12 @@ import 'providers/settings_provider.dart';
 import 'screens/trends.dart';
 import 'screens/log.dart';
 import 'screens/settings.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService().init();
+
   runApp(
     MultiProvider(
       providers: [
@@ -87,6 +91,33 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.onNotificationClick.addListener(_onNotificationClicked);
+
+    // Check if the app was launched by a notification click that was stored
+    if (NotificationService.onNotificationClick.value == 'log_tab') {
+      _currentIndex = 3; // Log tab
+    }
+  }
+
+  @override
+  void dispose() {
+    NotificationService.onNotificationClick.removeListener(_onNotificationClicked);
+    super.dispose();
+  }
+
+  void _onNotificationClicked() {
+    if (NotificationService.onNotificationClick.value == 'log_tab') {
+      setState(() {
+        _currentIndex = 3;
+      });
+      // Clear the value so it doesn't re-trigger unnecessarily
+      NotificationService.onNotificationClick.value = null;
+    }
+  }
 
   final List<Widget> _screens = [
     const DashboardScreen(),

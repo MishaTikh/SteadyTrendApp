@@ -145,11 +145,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 24),
+              _buildSectionTitle('NOTIFICATIONS'),
+              Card(
+                child: Column(
+                  children: [
+                    ListTile(
+                      title: const Text('Daily Reminder', style: TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: const Text('Get notified daily to log your weight.'),
+                      trailing: Switch(
+                        value: settings.pushNotificationsEnabled,
+                        onChanged: (val) => settings.updatePushNotificationsEnabled(val),
+                        activeColor: AppColors.primaryGreen,
+                      ),
+                    ),
+                    if (settings.pushNotificationsEnabled) ...[
+                      const Divider(height: 1),
+                      ListTile(
+                        title: const Text('Reminder Time', style: TextStyle(fontWeight: FontWeight.bold)),
+                        trailing: Text(
+                          _formatTime(settings.notificationTime),
+                          style: const TextStyle(fontSize: 16, color: AppColors.primaryGreen, fontWeight: FontWeight.bold),
+                        ),
+                        onTap: () async {
+                          final parts = settings.notificationTime.split(':');
+                          if (parts.length == 2) {
+                            final initialTime = TimeOfDay(
+                                hour: int.tryParse(parts[0]) ?? 7,
+                                minute: int.tryParse(parts[1]) ?? 0);
+                            final pickedTime = await showTimePicker(
+                              context: context,
+                              initialTime: initialTime,
+                            );
+                            if (pickedTime != null) {
+                              final formattedTime =
+                                  '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
+                              settings.updateNotificationTime(formattedTime);
+                            }
+                          }
+                        },
+                      ),
+                    ]
+                  ],
+                ),
+              ),
             ],
           );
         },
       ),
     );
+  }
+
+  String _formatTime(String timeStr) {
+    final parts = timeStr.split(':');
+    if (parts.length != 2) return timeStr;
+    final hour = int.tryParse(parts[0]) ?? 7;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    final timeOfDay = TimeOfDay(hour: hour, minute: minute);
+    return timeOfDay.format(context);
   }
 
   Widget _buildSectionTitle(String title) {
