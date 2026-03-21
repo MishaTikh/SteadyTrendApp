@@ -4,7 +4,6 @@ import 'screens/history.dart';
 import 'package:provider/provider.dart';
 import 'providers/weight_provider.dart';
 import 'providers/settings_provider.dart';
-import 'screens/trends.dart';
 import 'screens/log.dart';
 import 'screens/settings.dart';
 
@@ -90,7 +89,6 @@ class _MainScreenState extends State<MainScreen> {
 
   final List<Widget> _screens = [
     const DashboardScreen(),
-    const TrendsScreen(),
     const HistoryScreen(),
     const LogScreen(),
   ];
@@ -133,10 +131,6 @@ class _MainScreenState extends State<MainScreen> {
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
             label: 'DASHBOARD',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trending_up),
-            label: 'TRENDS',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.history),

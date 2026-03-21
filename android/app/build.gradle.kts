@@ -30,6 +30,13 @@ android {
         versionName = flutter.versionName
     }
 
+    applicationVariants.all {
+        outputs.all {
+            val output = this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+            output.outputFileName = "SteadyTrend.apk"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
