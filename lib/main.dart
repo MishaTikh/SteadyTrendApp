@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'screens/dashboard.dart';
 import 'screens/history.dart';
 import 'package:provider/provider.dart';
@@ -12,13 +13,25 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final notificationService = NotificationService();
-  await notificationService.init();
+  try {
+    await notificationService.init();
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error initializing NotificationService: $e');
+    }
+  }
 
   int initialIndex = 0;
-  final details = await notificationService.getNotificationAppLaunchDetails();
-  if (details != null && details.didNotificationLaunchApp) {
-    if (details.notificationResponse?.payload == 'log_weight') {
-      initialIndex = 2;
+  try {
+    final details = await notificationService.getNotificationAppLaunchDetails();
+    if (details != null && details.didNotificationLaunchApp) {
+      if (details.notificationResponse?.payload == 'log_weight') {
+        initialIndex = 2;
+      }
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('Error getting notification launch details: $e');
     }
   }
 
