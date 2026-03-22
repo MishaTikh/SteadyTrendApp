@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../main.dart'; // for AppColors
 import '../providers/settings_provider.dart';
-import '../providers/weight_provider.dart';
 import '../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -19,7 +18,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     final provider = Provider.of<SettingsProvider>(context, listen: false);
-    _goalController = TextEditingController(text: provider.goalWeight.toStringAsFixed(1));
+    _goalController = TextEditingController(
+      text: provider.goalWeight.toStringAsFixed(1),
+    );
   }
 
   @override
@@ -52,7 +53,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     ListTile(
-                      title: const Text('Preferred Unit', style: TextStyle(fontWeight: FontWeight.bold)),
+                      title: const Text(
+                        'Preferred Unit',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       trailing: SegmentedButton<String>(
                         segments: const [
                           ButtonSegment(value: 'LBS', label: Text('LBS')),
@@ -65,47 +69,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                           // Convert the displayed goal weight in the text field if the unit changed
                           if (oldUnit != newUnit) {
-                            double currentGoal = double.tryParse(_goalController.text) ?? settings.goalWeight;
+                            double currentGoal =
+                                double.tryParse(_goalController.text) ??
+                                settings.goalWeight;
                             if (newUnit == 'KG') {
                               currentGoal = currentGoal / 2.20462;
                             } else if (newUnit == 'LBS') {
                               currentGoal = currentGoal * 2.20462;
                             }
-                            _goalController.text = currentGoal.toStringAsFixed(1);
+                            _goalController.text = currentGoal.toStringAsFixed(
+                              1,
+                            );
                             settings.updateGoalWeight(currentGoal);
                           }
 
                           settings.updatePreferredUnit(newUnit);
                         },
                         style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.resolveWith<Color?>(
-                            (Set<WidgetState> states) {
-                              if (states.contains(WidgetState.selected)) {
-                                return AppColors.primaryGreen;
-                              }
-                              return null;
-                            },
-                          ),
-                          foregroundColor: WidgetStateProperty.resolveWith<Color?>(
-                            (Set<WidgetState> states) {
-                              if (states.contains(WidgetState.selected)) {
-                                return Colors.white;
-                              }
-                              return AppColors.textDark;
-                            },
-                          ),
+                          backgroundColor:
+                              WidgetStateProperty.resolveWith<Color?>((
+                                Set<WidgetState> states,
+                              ) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return AppColors.primaryGreen;
+                                }
+                                return null;
+                              }),
+                          foregroundColor:
+                              WidgetStateProperty.resolveWith<Color?>((
+                                Set<WidgetState> states,
+                              ) {
+                                if (states.contains(WidgetState.selected)) {
+                                  return Colors.white;
+                                }
+                                return AppColors.textDark;
+                              }),
                         ),
                       ),
                     ),
                     const Divider(height: 1),
                     ListTile(
-                      title: const Text('Goal Weight', style: TextStyle(fontWeight: FontWeight.bold)),
+                      title: const Text(
+                        'Goal Weight',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       subtitle: Text('In ${settings.preferredUnit}'),
                       trailing: SizedBox(
                         width: 80,
                         child: TextField(
                           controller: _goalController,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           textAlign: TextAlign.end,
                           decoration: const InputDecoration(
                             border: UnderlineInputBorder(),
@@ -116,15 +131,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             if (parsed != null) {
                               settings.updateGoalWeight(parsed);
                             } else {
-                              _goalController.text = settings.goalWeight.toStringAsFixed(1);
+                              _goalController.text = settings.goalWeight
+                                  .toStringAsFixed(1);
                             }
                           },
                           onTapOutside: (_) {
-                             final parsed = double.tryParse(_goalController.text);
+                            final parsed = double.tryParse(
+                              _goalController.text,
+                            );
                             if (parsed != null) {
                               settings.updateGoalWeight(parsed);
                             } else {
-                              _goalController.text = settings.goalWeight.toStringAsFixed(1);
+                              _goalController.text = settings.goalWeight
+                                  .toStringAsFixed(1);
                             }
                             FocusManager.instance.primaryFocus?.unfocus();
                           },
@@ -138,8 +157,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _buildSectionTitle('DISPLAY'),
               Card(
                 child: ListTile(
-                  title: const Text('Show Daily Data Dots', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Display individual log entries under the trend line on charts.'),
+                  title: const Text(
+                    'Show Daily Data Dots',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: const Text(
+                    'Display individual log entries under the trend line on charts.',
+                  ),
                   trailing: Switch(
                     value: settings.showDailyData,
                     onChanged: (val) => settings.updateShowDailyData(val),
@@ -153,20 +177,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Column(
                   children: [
                     ListTile(
-                      title: const Text('Daily Reminder', style: TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: const Text('Receive a notification to log your weight.'),
+                      title: const Text(
+                        'Daily Reminder',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: const Text(
+                        'Receive a notification to log your weight.',
+                      ),
                       trailing: Switch(
                         value: settings.isDailyReminderEnabled,
                         onChanged: (val) async {
                           if (val) {
-                            bool hasPermission = await NotificationService().requestPermissions();
+                            bool hasPermission = await NotificationService()
+                                .requestPermissions();
                             if (hasPermission) {
                               settings.updateDailyReminder(true);
                             } else {
                               // If permissions are not granted, ensure it stays off
                               if (context.mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Notification permissions are required.')),
+                                  const SnackBar(
+                                    content: Text(
+                                      'Notification permissions are required.',
+                                    ),
+                                  ),
                                 );
                               }
                               settings.updateDailyReminder(false);
@@ -181,21 +215,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     if (settings.isDailyReminderEnabled) ...[
                       const Divider(height: 1),
                       ListTile(
-                        title: const Text('Reminder Time', style: TextStyle(fontWeight: FontWeight.bold)),
+                        title: const Text(
+                          'Reminder Time',
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               _formatTime(settings.dailyReminderTime),
-                              style: const TextStyle(fontSize: 16, color: AppColors.textDark),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: AppColors.textDark,
+                              ),
                             ),
                             const SizedBox(width: 8),
-                            const Icon(Icons.access_time, color: AppColors.primaryGreen),
+                            const Icon(
+                              Icons.access_time,
+                              color: AppColors.primaryGreen,
+                            ),
                           ],
                         ),
                         onTap: () async {
                           final parts = settings.dailyReminderTime.split(':');
-                          TimeOfDay initialTime = const TimeOfDay(hour: 7, minute: 0);
+                          TimeOfDay initialTime = const TimeOfDay(
+                            hour: 7,
+                            minute: 0,
+                          );
                           if (parts.length == 2) {
                             initialTime = TimeOfDay(
                               hour: int.tryParse(parts[0]) ?? 7,
@@ -221,31 +267,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           );
 
                           if (picked != null) {
-                            final newTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                            final newTime =
+                                '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
                             settings.updateDailyReminderTime(newTime);
                           }
                         },
                       ),
                     ],
                   ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              _buildSectionTitle('DEVELOPER'),
-              Card(
-                child: ListTile(
-                  title: const Text('Demo Mode', style: TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: const Text('Show a synthetic 1-year dataset for taking screenshots.'),
-                  trailing: Switch(
-                    value: settings.isDemoMode,
-                    onChanged: (val) {
-                      settings.setDemoMode(val);
-                      // Update _goalController text to show the new demo goal or restored real goal
-                      _goalController.text = settings.goalWeight.toStringAsFixed(1);
-                      Provider.of<WeightProvider>(context, listen: false).setDemoMode(val);
-                    },
-                    activeColor: AppColors.primaryGreen,
-                  ),
                 ),
               ),
             ],

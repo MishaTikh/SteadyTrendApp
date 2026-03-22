@@ -81,8 +81,10 @@ class _LogScreenState extends State<LogScreen> {
   }
 
   void _saveWeight() {
-    Provider.of<WeightProvider>(context, listen: false)
-        .addWeight(_currentWeight, _selectedDate, _selectedUnit);
+    Provider.of<WeightProvider>(
+      context,
+      listen: false,
+    ).addWeight(_currentWeight, _selectedDate, _selectedUnit);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -93,7 +95,9 @@ class _LogScreenState extends State<LogScreen> {
   }
 
   void _showManualWeightEntry() {
-    final TextEditingController controller = TextEditingController(text: _currentWeight.toStringAsFixed(1));
+    final TextEditingController controller = TextEditingController(
+      text: _currentWeight.toStringAsFixed(1),
+    );
     showDialog(
       context: context,
       builder: (context) {
@@ -174,7 +178,10 @@ class _LogScreenState extends State<LogScreen> {
               child: Card(
                 margin: EdgeInsets.zero,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24.0,
+                    vertical: 48.0,
+                  ),
                   child: Column(
                     children: [
                       GestureDetector(
@@ -226,7 +233,13 @@ class _LogScreenState extends State<LogScreen> {
                             ),
                             elevation: 0,
                           ),
-                          child: const Text('Confirm Weight', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          child: const Text(
+                            'Confirm Weight',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                     ],
@@ -243,7 +256,9 @@ class _LogScreenState extends State<LogScreen> {
 
   Widget _buildDatePickerPill() {
     String dateText = DateFormat('MMM dd').format(_selectedDate).toUpperCase();
-    if (_selectedDate.year == DateTime.now().year && _selectedDate.month == DateTime.now().month && _selectedDate.day == DateTime.now().day) {
+    if (_selectedDate.year == DateTime.now().year &&
+        _selectedDate.month == DateTime.now().month &&
+        _selectedDate.day == DateTime.now().day) {
       dateText = 'TODAY, $dateText';
     }
 
@@ -256,7 +271,11 @@ class _LogScreenState extends State<LogScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.calendar_today, size: 16, color: AppColors.primaryGreen),
+          const Icon(
+            Icons.calendar_today,
+            size: 16,
+            color: AppColors.primaryGreen,
+          ),
           const SizedBox(width: 8),
           Text(
             dateText,
@@ -293,10 +312,21 @@ class _LogScreenState extends State<LogScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: _selectedUnit == 'LBS' ? AppColors.primaryGreen : Colors.transparent,
+                color: _selectedUnit == 'LBS'
+                    ? AppColors.primaryGreen
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text('LBS', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'LBS' ? Colors.white : AppColors.textDark)),
+              child: Text(
+                'LBS',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: _selectedUnit == 'LBS'
+                      ? Colors.white
+                      : AppColors.textDark,
+                ),
+              ),
             ),
           ),
           GestureDetector(
@@ -311,10 +341,21 @@ class _LogScreenState extends State<LogScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: _selectedUnit == 'KG' ? AppColors.primaryGreen : Colors.transparent,
+                color: _selectedUnit == 'KG'
+                    ? AppColors.primaryGreen
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Text('KG', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: _selectedUnit == 'KG' ? Colors.white : AppColors.textDark)),
+              child: Text(
+                'KG',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: _selectedUnit == 'KG'
+                      ? Colors.white
+                      : AppColors.textDark,
+                ),
+              ),
             ),
           ),
         ],
@@ -352,8 +393,10 @@ class _LogScreenState extends State<LogScreen> {
                     final isHalfNumber = index % 5 == 0 && !isWholeNumber;
 
                     double height = 16;
-                    if (isWholeNumber) height = 40;
-                    else if (isHalfNumber) height = 24;
+                    if (isWholeNumber)
+                      height = 40;
+                    else if (isHalfNumber)
+                      height = 24;
 
                     return Container(
                       width: 10,
@@ -361,7 +404,9 @@ class _LogScreenState extends State<LogScreen> {
                       child: Container(
                         width: 2,
                         height: height,
-                        color: isWholeNumber ? AppColors.textDark : AppColors.dividerColor,
+                        color: isWholeNumber
+                            ? AppColors.textDark
+                            : AppColors.dividerColor,
                       ),
                     );
                   },

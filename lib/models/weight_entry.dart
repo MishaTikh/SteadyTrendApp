@@ -33,5 +33,6 @@ class WeightEntry {
 
   String toJson() => json.encode(toMap());
 
-  factory WeightEntry.fromJson(String source) => WeightEntry.fromMap(json.decode(source));
+  factory WeightEntry.fromJson(String source) =>
+      WeightEntry.fromMap(json.decode(source));
 }
