@@ -13,7 +13,10 @@ import '../models/weight_entry.dart';
 class HistoryScreen extends StatelessWidget {
   const HistoryScreen({super.key});
 
-  Future<void> _exportCSV(List<WeightEntry> entries, String preferredUnit) async {
+  Future<void> _exportCSV(
+    List<WeightEntry> entries,
+    String preferredUnit,
+  ) async {
     if (entries.isEmpty) return;
 
     String csv = "Date,Time,Weight($preferredUnit)\n";
@@ -22,7 +25,8 @@ class HistoryScreen extends StatelessWidget {
       if (preferredUnit == 'KG') {
         displayWeight /= 2.20462;
       }
-      csv += "${DateFormat('yyyy-MM-dd').format(entry.date)},${DateFormat('HH:mm').format(entry.date)},${displayWeight.toStringAsFixed(2)}\n";
+      csv +=
+          "${DateFormat('yyyy-MM-dd').format(entry.date)},${DateFormat('HH:mm').format(entry.date)},${displayWeight.toStringAsFixed(2)}\n";
     }
 
     final directory = await getTemporaryDirectory();
@@ -32,13 +36,20 @@ class HistoryScreen extends StatelessWidget {
     await Share.shareXFiles([XFile(file.path)], text: 'My Weight History');
   }
 
-  void _editEntry(BuildContext context, WeightEntry entry, WeightProvider provider, SettingsProvider settings) {
+  void _editEntry(
+    BuildContext context,
+    WeightEntry entry,
+    WeightProvider provider,
+    SettingsProvider settings,
+  ) {
     double displayWeight = entry.weight;
     if (settings.preferredUnit == 'KG') {
       displayWeight /= 2.20462;
     }
 
-    final TextEditingController controller = TextEditingController(text: displayWeight.toStringAsFixed(1));
+    final TextEditingController controller = TextEditingController(
+      text: displayWeight.toStringAsFixed(1),
+    );
     DateTime selectedDate = entry.date;
 
     showModalBottomSheet(
@@ -58,11 +69,20 @@ class HistoryScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Edit Log Entry', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Edit Log Entry',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      const Text('Date:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      const Text(
+                        'Date:',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       const SizedBox(width: 16),
                       TextButton(
                         onPressed: () async {
@@ -76,20 +96,28 @@ class HistoryScreen extends StatelessWidget {
                             // keep the time
                             setState(() {
                               selectedDate = DateTime(
-                                picked.year, picked.month, picked.day,
-                                selectedDate.hour, selectedDate.minute, selectedDate.second
+                                picked.year,
+                                picked.month,
+                                picked.day,
+                                selectedDate.hour,
+                                selectedDate.minute,
+                                selectedDate.second,
                               );
                             });
                           }
                         },
-                        child: Text(DateFormat('MMM dd, yyyy').format(selectedDate)),
+                        child: Text(
+                          DateFormat('MMM dd, yyyy').format(selectedDate),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
                   TextField(
                     controller: controller,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Weight (${settings.preferredUnit})',
                       border: const OutlineInputBorder(),
@@ -104,18 +132,28 @@ class HistoryScreen extends StatelessWidget {
                           provider.deleteWeight(entry.id);
                           Navigator.pop(context);
                         },
-                        style: TextButton.styleFrom(foregroundColor: Colors.red),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.red,
+                        ),
                         child: const Text('Delete'),
                       ),
                       ElevatedButton(
                         onPressed: () {
                           final parsed = double.tryParse(controller.text);
                           if (parsed != null) {
-                            provider.updateWeight(entry.id, parsed, selectedDate, settings.preferredUnit);
+                            provider.updateWeight(
+                              entry.id,
+                              parsed,
+                              selectedDate,
+                              settings.preferredUnit,
+                            );
                             Navigator.pop(context);
                           }
                         },
-                        style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGreen, foregroundColor: Colors.white),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primaryGreen,
+                          foregroundColor: Colors.white,
+                        ),
                         child: const Text('Save'),
                       ),
                     ],
@@ -124,13 +162,17 @@ class HistoryScreen extends StatelessWidget {
                 ],
               ),
             );
-          }
+          },
         );
-      }
+      },
     );
   }
 
-  void _showBulkAddModal(BuildContext context, WeightProvider provider, SettingsProvider settings) {
+  void _showBulkAddModal(
+    BuildContext context,
+    WeightProvider provider,
+    SettingsProvider settings,
+  ) {
     DateTime currentDate = DateTime.now();
     final TextEditingController controller = TextEditingController();
     final FocusNode focusNode = FocusNode();
@@ -152,19 +194,25 @@ class HistoryScreen extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Quick Backlog Entry', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const Text(
+                    'Quick Backlog Entry',
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(DateFormat('MMMM d, yyyy').format(currentDate), style: const TextStyle(fontSize: 18)),
+                      Text(
+                        DateFormat('MMMM d, yyyy').format(currentDate),
+                        style: const TextStyle(fontSize: 18),
+                      ),
                       TextButton(
                         onPressed: () async {
                           final picked = await showDatePicker(
                             context: context,
                             initialDate: currentDate,
                             firstDate: DateTime(2000),
-                            lastDate: DateTime.now()
+                            lastDate: DateTime.now(),
                           );
                           if (picked != null) {
                             setState(() {
@@ -180,19 +228,30 @@ class HistoryScreen extends StatelessWidget {
                   TextField(
                     controller: controller,
                     focusNode: focusNode,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: InputDecoration(
                       labelText: 'Weight (${settings.preferredUnit})',
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
-                        icon: const Icon(Icons.check, color: AppColors.primaryGreen),
+                        icon: const Icon(
+                          Icons.check,
+                          color: AppColors.primaryGreen,
+                        ),
                         onPressed: () {
                           final val = controller.text;
                           final parsed = double.tryParse(val);
                           if (parsed != null) {
-                            provider.addWeight(parsed, currentDate, settings.preferredUnit);
+                            provider.addWeight(
+                              parsed,
+                              currentDate,
+                              settings.preferredUnit,
+                            );
                             setState(() {
-                              currentDate = currentDate.subtract(const Duration(days: 1));
+                              currentDate = currentDate.subtract(
+                                const Duration(days: 1),
+                              );
                               controller.clear();
                             });
                             focusNode.requestFocus();
@@ -203,9 +262,15 @@ class HistoryScreen extends StatelessWidget {
                     onSubmitted: (val) {
                       final parsed = double.tryParse(val);
                       if (parsed != null) {
-                        provider.addWeight(parsed, currentDate, settings.preferredUnit);
+                        provider.addWeight(
+                          parsed,
+                          currentDate,
+                          settings.preferredUnit,
+                        );
                         setState(() {
-                          currentDate = currentDate.subtract(const Duration(days: 1));
+                          currentDate = currentDate.subtract(
+                            const Duration(days: 1),
+                          );
                           controller.clear();
                         });
                         focusNode.requestFocus();
@@ -213,14 +278,17 @@ class HistoryScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 8),
-                  const Text('Press Enter or tap Check to save and move to previous day.', style: TextStyle(fontSize: 12, color: AppColors.textLight)),
+                  const Text(
+                    'Press Enter or tap Check to save and move to previous day.',
+                    style: TextStyle(fontSize: 12, color: AppColors.textLight),
+                  ),
                   const SizedBox(height: 32),
                 ],
               ),
             );
-          }
+          },
         );
-      }
+      },
     ).then((_) {
       controller.dispose();
       focusNode.dispose();
@@ -257,31 +325,42 @@ class HistoryScreen extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.playlist_add, color: AppColors.primaryGreen),
-                          onPressed: () => _showBulkAddModal(context, provider, settings),
+                          icon: const Icon(
+                            Icons.playlist_add,
+                            color: AppColors.primaryGreen,
+                          ),
+                          onPressed: () =>
+                              _showBulkAddModal(context, provider, settings),
                         ),
                         if (entries.isNotEmpty)
                           IconButton(
-                            icon: const Icon(Icons.download, color: AppColors.primaryGreen),
-                            onPressed: () => _exportCSV(entries, settings.preferredUnit),
+                            icon: const Icon(
+                              Icons.download,
+                              color: AppColors.primaryGreen,
+                            ),
+                            onPressed: () =>
+                                _exportCSV(entries, settings.preferredUnit),
                           ),
                       ],
                     ),
                   ],
                 ),
-            const SizedBox(height: 4),
-            const Text(
-              'Recorded logs and 7-day average variance.',
-              style: TextStyle(fontSize: 16, color: AppColors.textLight),
-            ),
-            const SizedBox(height: 32),
+                const SizedBox(height: 4),
+                const Text(
+                  'Recorded logs and 7-day average variance.',
+                  style: TextStyle(fontSize: 16, color: AppColors.textLight),
+                ),
+                const SizedBox(height: 32),
                 if (entries.isEmpty)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 48.0),
                     child: Center(
                       child: Text(
                         'No weight records found.',
-                        style: TextStyle(color: AppColors.textLight, fontSize: 16),
+                        style: TextStyle(
+                          color: AppColors.textLight,
+                          fontSize: 16,
+                        ),
                       ),
                     ),
                   )
@@ -309,13 +388,20 @@ class HistoryScreen extends StatelessWidget {
     );
   }
 
-  List<Widget> _buildHistoryList(List<WeightEntry> entries, WeightProvider provider, SettingsProvider settings, BuildContext context) {
+  List<Widget> _buildHistoryList(
+    List<WeightEntry> entries,
+    WeightProvider provider,
+    SettingsProvider settings,
+    BuildContext context,
+  ) {
     List<Widget> widgets = [];
     String currentMonthYear = '';
 
     for (int i = 0; i < entries.length; i++) {
       final entry = entries[i];
-      final monthYear = DateFormat('MMMM yyyy').format(entry.date).toUpperCase();
+      final monthYear = DateFormat(
+        'MMMM yyyy',
+      ).format(entry.date).toUpperCase();
 
       if (monthYear != currentMonthYear) {
         if (i > 0) widgets.add(const SizedBox(height: 24));
@@ -329,12 +415,15 @@ class HistoryScreen extends StatelessWidget {
 
       double displayWeight = entry.weight;
       if (settings.preferredUnit == 'KG') {
-         displayWeight /= 2.20462;
+        displayWeight /= 2.20462;
       }
       final weightStr = displayWeight.toStringAsFixed(1);
 
       // Calculate variance from previous 7 days
-      final avgLbs = provider.getRollingAverage(7, endDate: entry.date.subtract(const Duration(days: 1)));
+      final avgLbs = provider.getRollingAverage(
+        7,
+        endDate: entry.date.subtract(const Duration(days: 1)),
+      );
 
       String varianceStr = '--';
       bool isNegativeVariance = true;
@@ -343,15 +432,24 @@ class HistoryScreen extends StatelessWidget {
         double avg = settings.preferredUnit == 'KG' ? avgLbs / 2.20462 : avgLbs;
         final variance = displayWeight - avg;
         isNegativeVariance = variance <= 0;
-        varianceStr = '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(1)}';
+        varianceStr =
+            '${variance > 0 ? '+' : ''}${variance.toStringAsFixed(1)}';
       }
 
       widgets.add(
         InkWell(
           onTap: () => _editEntry(context, entry, provider, settings),
           borderRadius: BorderRadius.circular(12),
-          child: _buildLogEntry(day, month, time, weightStr, varianceStr, isNegativeVariance, settings.preferredUnit)
-        )
+          child: _buildLogEntry(
+            day,
+            month,
+            time,
+            weightStr,
+            varianceStr,
+            isNegativeVariance,
+            settings.preferredUnit,
+          ),
+        ),
       );
     }
 
@@ -373,19 +471,21 @@ class HistoryScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          Expanded(
-            child: Container(
-              height: 1,
-              color: AppColors.dividerColor,
-            ),
-          ),
+          Expanded(child: Container(height: 1, color: AppColors.dividerColor)),
         ],
       ),
     );
   }
 
   Widget _buildLogEntry(
-      String day, String month, String time, String weight, String variance, bool isNegativeVariance, String unit) {
+    String day,
+    String month,
+    String time,
+    String weight,
+    String variance,
+    bool isNegativeVariance,
+    String unit,
+  ) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
@@ -407,12 +507,18 @@ class HistoryScreen extends StatelessWidget {
                   Text(
                     month,
                     style: const TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
                   ),
                   Text(
                     day,
                     style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textDark,
+                    ),
                   ),
                 ],
               ),
@@ -425,12 +531,18 @@ class HistoryScreen extends StatelessWidget {
                   Text(
                     time,
                     style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark),
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
                   ),
                   const Text(
                     'TIMESTAMP',
                     style: TextStyle(
-                        fontSize: 10, letterSpacing: 1.0, color: AppColors.textLight),
+                      fontSize: 10,
+                      letterSpacing: 1.0,
+                      color: AppColors.textLight,
+                    ),
                   ),
                 ],
               ),
@@ -445,13 +557,19 @@ class HistoryScreen extends StatelessWidget {
                     Text(
                       weight,
                       style: const TextStyle(
-                          fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.textDark),
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.textDark,
+                      ),
                     ),
                     const SizedBox(width: 2),
                     Text(
                       unit,
                       style: const TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textLight),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textLight,
+                      ),
                     ),
                   ],
                 ),
@@ -459,9 +577,13 @@ class HistoryScreen extends StatelessWidget {
                 Row(
                   children: [
                     Icon(
-                      isNegativeVariance ? Icons.trending_down : Icons.trending_up,
+                      isNegativeVariance
+                          ? Icons.trending_down
+                          : Icons.trending_up,
                       size: 14,
-                      color: isNegativeVariance ? AppColors.positiveGreen : Colors.red,
+                      color: isNegativeVariance
+                          ? AppColors.positiveGreen
+                          : Colors.red,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -469,14 +591,18 @@ class HistoryScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isNegativeVariance ? AppColors.positiveGreen : Colors.red,
+                        color: isNegativeVariance
+                            ? AppColors.positiveGreen
+                            : Colors.red,
                       ),
                     ),
                     const SizedBox(width: 4),
                     const Text(
                       'vs 7D AVG',
                       style: TextStyle(
-                          fontSize: 10, color: AppColors.textLight),
+                        fontSize: 10,
+                        color: AppColors.textLight,
+                      ),
                     ),
                   ],
                 ),

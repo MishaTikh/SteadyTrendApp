@@ -39,18 +39,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: AppColors.textDark,
                   ),
                 ),
-            const SizedBox(height: 4),
-            const Text(
-              'Focusing on your weight trends over time.',
-              style: TextStyle(fontSize: 16, color: AppColors.textLight),
-            ),
-            const SizedBox(height: 16),
-            _buildTimePills(),
-            const SizedBox(height: 24),
+                const SizedBox(height: 4),
+                const Text(
+                  'Focusing on your weight trends over time.',
+                  style: TextStyle(fontSize: 16, color: AppColors.textLight),
+                ),
+                const SizedBox(height: 16),
+                _buildTimePills(),
+                const SizedBox(height: 24),
                 _buildChartCard(provider, settings),
-                if (provider.hasDataSpan(7)) _buildWeeklyMomentumCard(provider, settings),
+                if (provider.hasDataSpan(7))
+                  _buildWeeklyMomentumCard(provider, settings),
                 _buildProgressCard(provider, settings),
-                const SizedBox(height: 80), // padding for fab if any or bottom nav
+                const SizedBox(
+                  height: 80,
+                ), // padding for fab if any or bottom nav
               ],
             ),
           ),
@@ -95,7 +98,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
           color: isSelected ? Colors.white : Colors.transparent,
           borderRadius: BorderRadius.circular(20),
           boxShadow: isSelected
-              ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2))]
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
               : null,
         ),
         child: FittedBox(
@@ -157,9 +166,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       default:
         // Use earliest entry
         if (provider.entries.isNotEmpty) {
-           baseStartDate = provider.entries.last.date;
+          baseStartDate = provider.entries.last.date;
         } else {
-           baseStartDate = now.subtract(const Duration(days: 30));
+          baseStartDate = now.subtract(const Duration(days: 30));
         }
         maxDays = now.difference(baseStartDate).inDays;
         break;
@@ -172,10 +181,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final startDate = baseStartDate.subtract(panDuration);
     final endDate = startDate.add(Duration(days: maxDays));
 
-    final entries = List.from(provider.entries.where((e) =>
-      e.date.isAfter(startDate.subtract(const Duration(days: 1))) &&
-      e.date.isBefore(endDate.add(const Duration(days: 1)))
-    ).toList().reversed);
+    final entries = List.from(
+      provider.entries
+          .where(
+            (e) =>
+                e.date.isAfter(startDate.subtract(const Duration(days: 1))) &&
+                e.date.isBefore(endDate.add(const Duration(days: 1))),
+          )
+          .toList()
+          .reversed,
+    );
 
     // Map entries to FlSpot and adjust weights based on preferred unit
     List<FlSpot> dotsSpots = [];
@@ -188,14 +203,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
       for (var entry in entries) {
         double displayWeight = entry.weight;
         if (settings.preferredUnit == 'KG') {
-           displayWeight = displayWeight / 2.20462;
+          displayWeight = displayWeight / 2.20462;
         }
 
         if (displayWeight < minWeight) minWeight = displayWeight;
         if (displayWeight > maxWeight) maxWeight = displayWeight;
 
-        final daysFromStart = entry.date.difference(startDate).inDays.toDouble();
-        dotsSpots.add(FlSpot(daysFromStart >= 0 ? daysFromStart : 0, displayWeight));
+        final daysFromStart = entry.date
+            .difference(startDate)
+            .inDays
+            .toDouble();
+        dotsSpots.add(
+          FlSpot(daysFromStart >= 0 ? daysFromStart : 0, displayWeight),
+        );
       }
 
       // Compute trend line (7-day rolling average)
@@ -204,14 +224,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
         // Find if we have enough data up to this point
         final rollingAvg = provider.getRollingAverage(7, endDate: date);
         if (rollingAvg != null) {
-            double displayAvg = rollingAvg;
-            if (settings.preferredUnit == 'KG') {
-               displayAvg = displayAvg / 2.20462;
-            }
-            trendSpots.add(FlSpot(i.toDouble(), displayAvg));
+          double displayAvg = rollingAvg;
+          if (settings.preferredUnit == 'KG') {
+            displayAvg = displayAvg / 2.20462;
+          }
+          trendSpots.add(FlSpot(i.toDouble(), displayAvg));
 
-            if (displayAvg < minWeight) minWeight = displayAvg;
-            if (displayAvg > maxWeight) maxWeight = displayAvg;
+          if (displayAvg < minWeight) minWeight = displayAvg;
+          if (displayAvg > maxWeight) maxWeight = displayAvg;
         }
       }
 
@@ -246,12 +266,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(color: AppColors.primaryGreen, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'WEIGHT MOVEMENT (${settings.preferredUnit})',
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1.0, color: AppColors.primaryGreen),
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                    color: AppColors.primaryGreen,
+                  ),
                 ),
               ],
             ),
@@ -260,7 +288,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onHorizontalDragUpdate: (details) {
                 if (_selectedTimeSpan == 'ALL TIME') return;
                 setState(() {
-                  double daysPerPixel = maxDays / MediaQuery.of(context).size.width;
+                  double daysPerPixel =
+                      maxDays / MediaQuery.of(context).size.width;
                   _panOffsetDays += details.primaryDelta! * daysPerPixel;
                   if (_panOffsetDays < 0) _panOffsetDays = 0;
                 });
@@ -272,92 +301,125 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     lineTouchData: const LineTouchData(enabled: false),
                     clipData: const FlClipData.all(),
                     gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: yInterval,
-                  ),
-                  titlesData: FlTitlesData(
-                    show: true,
-                    topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                        interval: yInterval,
-                        getTitlesWidget: (value, meta) {
-                          return SideTitleWidget(
-                            meta: meta,
-                            space: 8,
-                            child: Text(
-                              value.toStringAsFixed(0),
-                              style: const TextStyle(color: AppColors.textLight, fontSize: 10),
-                            ),
-                          );
-                        },
-                      ),
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: yInterval,
                     ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 22,
-                        getTitlesWidget: (value, meta) {
-                          if (maxX <= 0) return const SizedBox();
-
-                          // Display date for first, last, and middle points
-                          if (value == 0 || value == maxX || value == (maxX / 2).roundToDouble()) {
-                             final date = startDate.add(Duration(days: value.toInt()));
-                             const style = TextStyle(color: AppColors.textLight, fontSize: 10);
-                             return SideTitleWidget(
+                    titlesData: FlTitlesData(
+                      show: true,
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 32,
+                          interval: yInterval,
+                          getTitlesWidget: (value, meta) {
+                            return SideTitleWidget(
                               meta: meta,
                               space: 8,
-                              child: Text(DateFormat('MMM dd').format(date).toUpperCase(), style: style),
+                              child: Text(
+                                value.toStringAsFixed(0),
+                                style: const TextStyle(
+                                  color: AppColors.textLight,
+                                  fontSize: 10,
+                                ),
+                              ),
                             );
-                          }
-                          return const SizedBox();
-                        },
-                      ),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  minX: 0,
-                  maxX: maxX,
-                  minY: minWeight,
-                  maxY: maxWeight,
-                  lineBarsData: [
-                    if (settings.showDailyData && dotsSpots.isNotEmpty)
-                      LineChartBarData(
-                        spots: dotsSpots,
-                        isCurved: false,
-                        color: AppColors.primaryGreen.withOpacity(0.3),
-                        barWidth: 0, // hide line, only show dots
-                        isStrokeCapRound: true,
-                        dotData: FlDotData(show: true, getDotPainter: (spot, percent, barData, index) {
-                          final spotDate = startDate.add(Duration(days: spot.x.toInt()));
-                          if (spotDate.weekday == DateTime.saturday || spotDate.weekday == DateTime.sunday) {
-                            return FlDotCirclePainter(radius: 3, color: Colors.amber.withOpacity(0.8), strokeWidth: 0);
-                          }
-                          return FlDotCirclePainter(radius: 3, color: AppColors.primaryGreen.withOpacity(0.4), strokeWidth: 0);
-                        }),
-                        belowBarData: BarAreaData(show: false),
-                      ),
-                    if (trendSpots.isNotEmpty)
-                      LineChartBarData(
-                        spots: trendSpots,
-                        isCurved: true,
-                        color: AppColors.primaryGreen,
-                        barWidth: 2,
-                        isStrokeCapRound: true,
-                        dotData: const FlDotData(show: false),
-                        belowBarData: BarAreaData(
-                          show: true,
-                          color: AppColors.primaryGreen.withOpacity(0.05),
+                          },
                         ),
                       ),
-                  ],
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 22,
+                          getTitlesWidget: (value, meta) {
+                            if (maxX <= 0) return const SizedBox();
+
+                            // Display date for first, last, and middle points
+                            if (value == 0 ||
+                                value == maxX ||
+                                value == (maxX / 2).roundToDouble()) {
+                              final date = startDate.add(
+                                Duration(days: value.toInt()),
+                              );
+                              const style = TextStyle(
+                                color: AppColors.textLight,
+                                fontSize: 10,
+                              );
+                              return SideTitleWidget(
+                                meta: meta,
+                                space: 8,
+                                child: Text(
+                                  DateFormat(
+                                    'MMM dd',
+                                  ).format(date).toUpperCase(),
+                                  style: style,
+                                ),
+                              );
+                            }
+                            return const SizedBox();
+                          },
+                        ),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    minX: 0,
+                    maxX: maxX,
+                    minY: minWeight,
+                    maxY: maxWeight,
+                    lineBarsData: [
+                      if (settings.showDailyData && dotsSpots.isNotEmpty)
+                        LineChartBarData(
+                          spots: dotsSpots,
+                          isCurved: false,
+                          color: AppColors.primaryGreen.withOpacity(0.3),
+                          barWidth: 0, // hide line, only show dots
+                          isStrokeCapRound: true,
+                          dotData: FlDotData(
+                            show: true,
+                            getDotPainter: (spot, percent, barData, index) {
+                              final spotDate = startDate.add(
+                                Duration(days: spot.x.toInt()),
+                              );
+                              if (spotDate.weekday == DateTime.saturday ||
+                                  spotDate.weekday == DateTime.sunday) {
+                                return FlDotCirclePainter(
+                                  radius: 3,
+                                  color: Colors.amber.withOpacity(0.8),
+                                  strokeWidth: 0,
+                                );
+                              }
+                              return FlDotCirclePainter(
+                                radius: 3,
+                                color: AppColors.primaryGreen.withOpacity(0.4),
+                                strokeWidth: 0,
+                              );
+                            },
+                          ),
+                          belowBarData: BarAreaData(show: false),
+                        ),
+                      if (trendSpots.isNotEmpty)
+                        LineChartBarData(
+                          spots: trendSpots,
+                          isCurved: true,
+                          color: AppColors.primaryGreen,
+                          barWidth: 2,
+                          isStrokeCapRound: true,
+                          dotData: const FlDotData(show: false),
+                          belowBarData: BarAreaData(
+                            show: true,
+                            color: AppColors.primaryGreen.withOpacity(0.05),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
             ),
           ],
         ),
@@ -365,9 +427,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildWeeklyMomentumCard(WeightProvider provider, SettingsProvider settings) {
+  Widget _buildWeeklyMomentumCard(
+    WeightProvider provider,
+    SettingsProvider settings,
+  ) {
     final current7DayAvgLbs = provider.getRollingAverage(7);
-    final previous7DayAvgLbs = provider.getRollingAverage(7, endDate: DateTime.now().subtract(const Duration(days: 7)));
+    final previous7DayAvgLbs = provider.getRollingAverage(
+      7,
+      endDate: DateTime.now().subtract(const Duration(days: 7)),
+    );
 
     if (current7DayAvgLbs == null || previous7DayAvgLbs == null) {
       return const SizedBox();
@@ -375,7 +443,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     double diff = current7DayAvgLbs - previous7DayAvgLbs;
     if (settings.preferredUnit == 'KG') {
-       diff = diff / 2.20462;
+      diff = diff / 2.20462;
     }
 
     final isDown = diff <= 0;
@@ -392,9 +460,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 const Text(
                   'WEEKLY TREND',
-                  style: TextStyle(fontSize: 12, letterSpacing: 1.0, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                    color: AppColors.textDark,
+                  ),
                 ),
-                Icon(Icons.trending_down, color: AppColors.primaryGreen, size: 20),
+                Icon(
+                  Icons.trending_down,
+                  color: AppColors.primaryGreen,
+                  size: 20,
+                ),
               ],
             ),
             const SizedBox(height: 8),
@@ -404,18 +480,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 Text(
                   diff.abs().toStringAsFixed(1),
-                  style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: isDown ? AppColors.primaryGreen : Colors.red),
+                  style: TextStyle(
+                    fontSize: 48,
+                    fontWeight: FontWeight.bold,
+                    color: isDown ? AppColors.primaryGreen : Colors.red,
+                  ),
                 ),
                 const SizedBox(width: 4),
                 Text(
                   settings.preferredUnit,
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: isDown ? AppColors.primaryGreen : Colors.red),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: isDown ? AppColors.primaryGreen : Colors.red,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Text(
-              isDown ? 'Weight is trending downward compared to last week' : 'Weight is trending upward compared to last week',
+              isDown
+                  ? 'Weight is trending downward compared to last week'
+                  : 'Weight is trending upward compared to last week',
               style: const TextStyle(fontSize: 14, color: AppColors.textDark),
             ),
           ],
@@ -424,11 +510,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildProgressCard(WeightProvider provider, SettingsProvider settings) {
+  Widget _buildProgressCard(
+    WeightProvider provider,
+    SettingsProvider settings,
+  ) {
     if (provider.entries.isEmpty) return const SizedBox();
 
     double currentWeightLbs = provider.entries.first.weight;
-    double currentWeight = settings.preferredUnit == 'KG' ? currentWeightLbs / 2.20462 : currentWeightLbs;
+    double currentWeight = settings.preferredUnit == 'KG'
+        ? currentWeightLbs / 2.20462
+        : currentWeightLbs;
 
     double diffToGoal = currentWeight - settings.goalWeight;
     bool hasReachedGoal = diffToGoal <= 0;
@@ -437,20 +528,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
     String forecastText = '';
     if (provider.hasDataSpan(7) && !hasReachedGoal) {
       final current7DayAvgLbs = provider.getRollingAverage(7);
-      final previous7DayAvgLbs = provider.getRollingAverage(7, endDate: DateTime.now().subtract(const Duration(days: 7)));
+      final previous7DayAvgLbs = provider.getRollingAverage(
+        7,
+        endDate: DateTime.now().subtract(const Duration(days: 7)),
+      );
 
       if (current7DayAvgLbs != null && previous7DayAvgLbs != null) {
-         final diffLbs = current7DayAvgLbs - previous7DayAvgLbs;
-         double goalLbs = settings.preferredUnit == 'KG' ? settings.goalWeight * 2.20462 : settings.goalWeight;
+        final diffLbs = current7DayAvgLbs - previous7DayAvgLbs;
+        double goalLbs = settings.preferredUnit == 'KG'
+            ? settings.goalWeight * 2.20462
+            : settings.goalWeight;
 
-         if (diffLbs < 0 && current7DayAvgLbs > goalLbs) {
-            final dailyRate = diffLbs / 7.0;
-            final daysToGoal = ((current7DayAvgLbs - goalLbs) / -dailyRate).round();
-            final forecastDate = DateTime.now().add(Duration(days: daysToGoal));
-            forecastText = "Projected goal date: ${DateFormat('MMMM d, yyyy').format(forecastDate)}";
-         } else if (diffLbs > 0) {
-            forecastText = "Weight is currently trending upwards.";
-         }
+        if (diffLbs < 0 && current7DayAvgLbs > goalLbs) {
+          final dailyRate = diffLbs / 7.0;
+          final daysToGoal = ((current7DayAvgLbs - goalLbs) / -dailyRate)
+              .round();
+          final forecastDate = DateTime.now().add(Duration(days: daysToGoal));
+          forecastText =
+              "Projected goal date: ${DateFormat('MMMM d, yyyy').format(forecastDate)}";
+        } else if (diffLbs > 0) {
+          forecastText = "Weight is currently trending upwards.";
+        }
       }
     }
 
@@ -466,34 +564,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
               children: [
                 const Text(
                   'GOAL PROGRESS',
-                  style: TextStyle(fontSize: 12, letterSpacing: 1.0, color: AppColors.textDark),
+                  style: TextStyle(
+                    fontSize: 12,
+                    letterSpacing: 1.0,
+                    color: AppColors.textDark,
+                  ),
                 ),
                 Icon(Icons.flag, color: AppColors.dividerColor, size: 20),
               ],
             ),
             const SizedBox(height: 16),
             if (hasReachedGoal)
-               const Text(
-                 'Congratulations! You have reached your goal.',
-                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryGreen),
-               )
+              const Text(
+                'Congratulations! You have reached your goal.',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryGreen,
+                ),
+              )
             else ...[
-               Text(
-                 '${diffToGoal.toStringAsFixed(1)} ${settings.preferredUnit} REMAINING',
-                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark),
-               ),
-               if (forecastText.isNotEmpty) ...[
-                 const SizedBox(height: 8),
-                 Text(
-                   forecastText,
-                   style: const TextStyle(fontSize: 14, color: AppColors.textLight),
-                 ),
-                 const SizedBox(height: 8),
-                 Text(
-                   'BASED ON YOUR 1-WEEK TREND',
-                   style: TextStyle(fontSize: 10, letterSpacing: 1.0, color: AppColors.textDark.withOpacity(0.7)),
-                 ),
-               ]
+              Text(
+                '${diffToGoal.toStringAsFixed(1)} ${settings.preferredUnit} REMAINING',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+              if (forecastText.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  forecastText,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textLight,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'BASED ON YOUR 1-WEEK TREND',
+                  style: TextStyle(
+                    fontSize: 10,
+                    letterSpacing: 1.0,
+                    color: AppColors.textDark.withOpacity(0.7),
+                  ),
+                ),
+              ],
             ],
           ],
         ),

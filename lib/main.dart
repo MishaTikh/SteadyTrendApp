@@ -61,8 +61,14 @@ class MyApp extends StatelessWidget {
           background: AppColors.backgroundLight,
         ),
         textTheme: const TextTheme(
-          displayLarge: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
-          displayMedium: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.bold),
+          displayLarge: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
+          displayMedium: TextStyle(
+            color: AppColors.textDark,
+            fontWeight: FontWeight.bold,
+          ),
           bodyLarge: TextStyle(color: AppColors.textDark),
           bodyMedium: TextStyle(color: AppColors.textLight),
         ),
@@ -78,7 +84,11 @@ class MyApp extends StatelessWidget {
           backgroundColor: AppColors.backgroundLight,
           elevation: 0,
           iconTheme: IconThemeData(color: AppColors.primaryGreen),
-          titleTextStyle: TextStyle(color: AppColors.textDark, fontSize: 20, fontWeight: FontWeight.bold),
+          titleTextStyle: TextStyle(
+            color: AppColors.textDark,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         bottomNavigationBarTheme: const BottomNavigationBarThemeData(
           backgroundColor: Colors.white,
@@ -133,19 +143,31 @@ class _MainScreenState extends State<MainScreen> {
         child: AppBar(
           title: Row(
             children: [
-              const Icon(Icons.trending_down, color: AppColors.primaryGreen, size: 28),
+              const Icon(
+                Icons.trending_down,
+                color: AppColors.primaryGreen,
+                size: 28,
+              ),
               const SizedBox(width: 8),
-              const Text('SteadyTrend', style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+              const Text(
+                'SteadyTrend',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.2,
+                ),
+              ),
             ],
           ),
           actions: [
             IconButton(
               icon: const Icon(Icons.settings, color: AppColors.textDark),
               onPressed: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (context) => const SettingsScreen(),
-                  fullscreenDialog: true,
-                ));
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsScreen(),
+                    fullscreenDialog: true,
+                  ),
+                );
               },
             ),
           ],
@@ -164,10 +186,7 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.dashboard),
             label: 'DASHBOARD',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.history),
-            label: 'HISTORY',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'HISTORY'),
           BottomNavigationBarItem(
             icon: Icon(Icons.add_circle_outline),
             label: 'LOG',
