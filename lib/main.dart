@@ -6,15 +6,29 @@ import 'providers/weight_provider.dart';
 import 'providers/settings_provider.dart';
 import 'screens/log.dart';
 import 'screens/settings.dart';
+import 'services/notification_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final notificationService = NotificationService();
+  await notificationService.init();
+
+  int initialIndex = 0;
+  final details = await notificationService.getNotificationAppLaunchDetails();
+  if (details != null && details.didNotificationLaunchApp) {
+    if (details.notificationResponse?.payload == 'log_weight') {
+      initialIndex = 2;
+    }
+  }
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => WeightProvider()),
         ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
-      child: const MyApp(),
+      child: MyApp(initialIndex: initialIndex),
     ),
   );
 }
@@ -30,7 +44,9 @@ class AppColors {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final int initialIndex;
+
+  const MyApp({super.key, this.initialIndex = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -72,26 +88,42 @@ class MyApp extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
         ),
       ),
-      home: const MainScreen(),
+      home: MainScreen(initialIndex: initialIndex),
     );
   }
 }
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final int initialIndex;
+
+  const MainScreen({super.key, this.initialIndex = 0});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   final List<Widget> _screens = [
     const DashboardScreen(),
     const HistoryScreen(),
     const LogScreen(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+
+    NotificationService().onNotificationClick = (String? payload) {
+      if (payload == 'log_weight') {
+        setState(() {
+          _currentIndex = 2; // Index of LogScreen
+        });
+      }
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
